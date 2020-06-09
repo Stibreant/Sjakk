@@ -1,6 +1,6 @@
 import tkinter
 from Klasser import *
-
+#Hello
 class SjakkSpill:
 
     def __init__(self):
