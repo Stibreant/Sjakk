@@ -7,11 +7,13 @@ class Tile:
         self.piece = piece
         self.avaliavbe_size = 10
         self.avaliable = None
+        self.sprite = None
 
 
     def draw_tile(self, master, a, b, c ,d, e):
         test = master.board.create_rectangle(a,b,c,d,fill=e)
         master.board.tag_bind(test,"<Button-1>", lambda event, a=self: master.clicked(a))
+        self.sprite = test
 
     def got_piece(self, piece):
         self.piece = piece
@@ -47,13 +49,12 @@ class Tile:
 
 class Pawn:
 
-    def __init__(self, tile, colour, sprite, size):
+    def __init__(self, tile, colour, sprite):
         self.tile = tile
         self.update_tile()
         self.first_move = True
         self.colour = colour
         self.sprite = sprite
-        self.size = [size]
         self.en_passant = False
 
     def update_tile(self):
@@ -89,11 +90,33 @@ class Pawn:
                  if tiles[tile_index-1].piece == None:
                     legal_moves.append(tiles[tile_index-1])
 
+        for element in self.en_passant_allowed(tiles, tile_index):
+            legal_moves.append(element)
         text = "Legal moves are"
         for move in legal_moves:
             text += f"{move} "
         print(text)
         return legal_moves
+
+    def en_passant_allowed(self, tiles, tile_index):
+        legal_moves = []
+        if self.tile.cordinate[1] != 1:
+            if self.tile.cordinate[1] != 6:
+                if self.colour == "white":
+                    if type(tiles[tile_index-8].piece) == Pawn and tiles[tile_index-8].piece.en_passant == True:
+                        legal_moves.append(tiles[tile_index-7])
+                    if type(tiles[tile_index+8].piece) == Pawn and tiles[tile_index+8].piece.en_passant == True:
+                        legal_moves.append(tiles[tile_index+9])
+                elif self.colour == "black":
+                    if type(tiles[tile_index-8].piece) == Pawn and tiles[tile_index-8].piece.en_passant == True:
+                        legal_moves.append(tiles[tile_index-9])
+                    try:
+                        if type(tiles[tile_index+8].piece) == Pawn and tiles[tile_index+8].piece.en_passant == True:
+                            legal_moves.append(tiles[tile_index+7])
+                    except IndexError:  #Feilmelding med h bonden fikset.
+                        return legal_moves
+        return legal_moves
+
 
     def can_attack_piece(self, tiles, tile_index):
         legal_moves = []
@@ -123,13 +146,12 @@ class Pawn:
         return f"I is {self.colour} pawn on {str(self.tile)}"
 
 class Rook:
-    def __init__(self, tile, colour, sprite, size: list):
+    def __init__(self, tile, colour, sprite):
         self.tile = tile
         self.update_tile()
         self.first_move = True
         self.colour = colour
         self.sprite = sprite
-        self.size = size    #[width, heigth]
 
     def legal_moves(self, tiles):
         tile_index = tiles.index(self.tile)

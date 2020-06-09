@@ -1,4 +1,5 @@
 import tkinter
+from PIL import ImageTk, Image
 from Klasser import *
 
 
@@ -17,11 +18,20 @@ class SjakkSpill:
         self.tiles = []
         self.make_board()
 
+        img = Image.open("white_pawn.png")  # PIL solution
+        img = img.resize((int(self.tiles[0].size*0.9),int(self.tiles[0].size*0.9) ), Image.ANTIALIAS) #The (250, 250) is (height, width)
+        self.white_pawn = ImageTk.PhotoImage(img) # convert to PhotoImage
+
+        img = Image.open("black_pawn.png")  # PIL solution
+        img = img.resize((int(self.tiles[0].size*0.9),int(self.tiles[0].size*0.9) ), Image.ANTIALIAS) #The (250, 250) is (height, width)
+        self.black_pawn = ImageTk.PhotoImage(img) # convert to PhotoImage
+
+
         self.pawns = []
         self.make_pawns()
 
         self.rooks = []
-        self.make_rooks()
+        #self.make_rooks()
 
         self.white_pieces_taken = 0
         self.black_pieces_taken = 0
@@ -30,7 +40,12 @@ class SjakkSpill:
         self.previous_clicked_tile = None
         self.avaliable_dots = []
         self.avaliable_tiles = []
+        self.images = []
 
+
+        #for i in range(64):
+                #pawn_image = tkinter.PhotoImage(file="pawn.png")
+        #        pikk = self.board.create_image(self.tiles[i].position[0],self.tiles[i].position[1]- 12, anchor=tkinter.NW ,image=self.img)
         tkinter.mainloop()
 
     def clicked(self, tile):
@@ -69,40 +84,54 @@ class SjakkSpill:
 
     def move_piece(self, tile):
         if self.previous_clicked_tile.piece is not None:
-            if len(self.previous_clicked_tile.piece.size) == 1:
-                size = [self.previous_clicked_tile.piece.size[0], self.previous_clicked_tile.piece.size[0]]
-            elif len(self.previous_clicked_tile.piece.size) > 1:
-                size = self.previous_clicked_tile.piece.size
-
-            self.board.coords(self.previous_clicked_tile.piece.sprite, tile.position[0] + 0.5*(tile.size - size[0]), tile.position[1] + 0.5*(tile.size - size[1]),
-                                       tile.position[0] + 0.5*(tile.size + size[0]), tile.position[1] + 0.5*(tile.size + size[1]))
+            self.board.coords(self.previous_clicked_tile.piece.sprite, tile.position[0]+4, tile.position[1]+4)
             self.previous_clicked_tile.piece.first_move = False
             if tile.piece is not None:      # If piece is taken, move piece to a player
-                x_translation = 0.005
-                if len(tile.piece.size) == 1:
-                    size = [tile.piece.size[0], tile.piece.size[0]]
-                elif len(tile.piece.size) > 1:
-                    size = tile.piece.size
-                if tile.piece.colour == "white":
-                    player_closest_tile = self.tiles[7]
-                    self.board.coords(tile.piece.sprite, player_closest_tile.position[0] + 0.5*(tile.size - size[0]) + self.white_pieces_taken*self.width*x_translation, player_closest_tile.position[1] + 0.5*(tile.size - size[1]) + self.height*0.1,
-                                      player_closest_tile.position[0] + 0.5*(tile.size + size[0]) + self.white_pieces_taken*self.width*x_translation, player_closest_tile.position[1] + 0.5*(tile.size + size[1]) + self.height*0.1)
-                    self.white_pieces_taken += 1
-
-                elif tile.piece.colour == "black":
-                    player_closest_tile = self.tiles[0]
-                    self.board.coords(tile.piece.sprite, player_closest_tile.position[0] + 0.5*(tile.size - size[0]) + self.black_pieces_taken*self.width*x_translation, player_closest_tile.position[1] + 0.5*(tile.size - size[1]) - self.height*0.1,
-                                      player_closest_tile.position[0] + 0.5*(tile.size + size[0]) + self.black_pieces_taken*self.width*x_translation, player_closest_tile.position[1] + 0.5*(tile.size + size[1]) - self.height*0.1)
-                    self.black_pieces_taken += 1
-
+                self.remove_piece(tile, tile.piece)
+            self.took_piece_with_en_passant(tile)
+            self.enable_en_passant(tile)
             self.previous_clicked_tile.piece.update_piece_and_tile(tile)
             self.update_turn()
 
     def update_turn(self):
         if self.turn == "white":
             self.turn = "black"
+            for pawn in self.pawns:
+                if pawn.colour == "black":
+                    pawn.en_passant = False
         elif self.turn == "black":
+            for pawn in self.pawns:
+                if pawn.colour == "white":
+                    pawn.en_passant = False
             self.turn = "white"
+
+    def enable_en_passant(self, tile):
+        if type(self.previous_clicked_tile.piece) == Pawn:
+            if abs(self.previous_clicked_tile.cordinate[1] - tile.cordinate[1]) == 2:
+                self.previous_clicked_tile.piece.en_passant = True
+
+    def remove_piece(self, tile, piece):
+        x_translation = 0.005
+        if piece.colour == "white":
+            player_closest_tile = self.tiles[7]
+            self.board.coords(piece.sprite, player_closest_tile.position[0] + self.white_pieces_taken*self.width*x_translation, player_closest_tile.position[1] + self.height*0.1)
+            self.white_pieces_taken += 1
+
+        elif piece.colour == "black":
+            player_closest_tile = self.tiles[0]
+            self.board.coords(piece.sprite, player_closest_tile.position[0] + self.black_pieces_taken*self.width*x_translation, player_closest_tile.position[1]  - self.height*0.1)
+            self.black_pieces_taken += 1
+
+    def took_piece_with_en_passant(self, tile):
+        if tile.piece is None and type(self.previous_clicked_tile.piece) == Pawn and abs(self.previous_clicked_tile.cordinate[0]-tile.cordinate[0]) == 1:
+            tile_index = self.tiles.index(tile)
+            if self.previous_clicked_tile.piece.colour == "white":
+                self.remove_piece(self.tiles[tile_index-1], self.tiles[tile_index-1].piece)
+                self.tiles[tile_index-1].piece = None
+            if self.previous_clicked_tile.piece.colour == "black":
+                self.remove_piece(self.tiles[tile_index+1], self.tiles[tile_index+1].piece)
+                self.tiles[tile_index+1].piece = None
+
 
 
 
@@ -133,18 +162,17 @@ class SjakkSpill:
             #print(each)
 
     def make_pawns(self):
-        pawnsize = (self.height + self.width)/2 * 0.02
         for tile in self.tiles:
             if tile.cordinate[1] == 6:
-                sprite = self.board.create_oval(tile.position[0] + 0.5*(tile.size - pawnsize), tile.position[1] + 0.5*(tile.size - pawnsize),
-                                       tile.position[0] + 0.5*(tile.size + pawnsize), tile.position[1] + 0.5*(tile.size + pawnsize), fill=self.black_colour)
-                pawn = Pawn(tile, "black", sprite, pawnsize)
+                sprite = self.board.create_image(tile.position[0]+4,tile.position[1]+5, anchor=tkinter.NW, image=self.black_pawn)
+                pawn = Pawn(tile, "black", sprite)
+                self.board.tag_bind(pawn.sprite, "<Button-1>", lambda event, a=pawn.tile: self.clicked(a))
                 self.pawns.append(pawn)
 
             elif tile.cordinate[1] == 1:
-                sprite = self.board.create_oval(tile.position[0] + 0.5*(tile.size - pawnsize), tile.position[1] + 0.5*(tile.size - pawnsize),
-                                   tile.position[0] + 0.5*(tile.size + pawnsize), tile.position[1] + 0.5*(tile.size + pawnsize), fill=self.white_colour)
-                pawn = Pawn(tile, "white", sprite, pawnsize)
+                sprite = self.board.create_image(tile.position[0]+4,tile.position[1]+5, anchor=tkinter.NW, image=self.white_pawn)
+                pawn = Pawn(tile, "white", sprite)
+                self.board.tag_bind(pawn.sprite,"<Button-1>", lambda event, a=pawn.tile: self.clicked(a))
                 self.pawns.append(pawn)
 
     def make_rooks(self):
@@ -154,12 +182,12 @@ class SjakkSpill:
             if tile.cordinate[1] == 0 and (tile.cordinate[0] == 0 or tile.cordinate[0] == 7):
                 sprite = self.board.create_rectangle(tile.position[0] + 0.5*(tile.size - rookwidth), tile.position[1] + 0.5*(tile.size - rookheight),
                                        tile.position[0] + 0.5*(tile.size + rookwidth), tile.position[1] + 0.5*(tile.size + rookheight), fill=self.white_colour)
-                rook = Rook(tile, "white", sprite, [rookwidth, rookheight])
+                rook = Rook(tile, "white", sprite)
                 self.rooks.append(rook)
             elif tile.cordinate[1] == 7 and (tile.cordinate[0] == 0 or tile.cordinate[0] == 7):
                 sprite = self.board.create_rectangle(tile.position[0] + 0.5*(tile.size - rookwidth), tile.position[1] + 0.5*(tile.size - rookheight),
                                        tile.position[0] + 0.5*(tile.size + rookwidth), tile.position[1] + 0.5*(tile.size + rookheight), fill=self.black_colour)
-                rook = Rook(tile, "black", sprite, [rookwidth, rookheight])
+                rook = Rook(tile, "black", sprite)
                 self.rooks.append(rook)
 
 
