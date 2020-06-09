@@ -1,3 +1,4 @@
+import math
 class Tile:
     def __init__(self, letter, number, xpos, ypos, size, piece = None):
         self.size = size
@@ -52,7 +53,8 @@ class Pawn:
         self.first_move = True
         self.colour = colour
         self.sprite = sprite
-        self.size = size
+        self.size = [size]
+        self.en_passant = False
 
     def update_tile(self):
         self.tile.got_piece(self)
@@ -97,22 +99,106 @@ class Pawn:
         legal_moves = []
         if self.colour == "white":
             if self.tile.cordinate[0] != 7:
-                if tiles[tile_index+9].piece is not None:
-                    legal_moves.append(tiles[tile_index+9])
+                if tiles[tile_index+9].piece is not None and tiles[tile_index+9].piece:
+                    if tiles[tile_index+9].piece.colour =="black":
+                        legal_moves.append(tiles[tile_index+9])
 
             if tiles[tile_index-7].piece is not None and tile_index-9 >= 0:
-                legal_moves.append(tiles[tile_index-7])
+                if tiles[tile_index-7].piece.colour =="black":
+                    legal_moves.append(tiles[tile_index-7])
 
         elif self.colour == "black":
             if tiles[tile_index-9].piece is not None and tile_index-9 >= 0:
-                legal_moves.append(tiles[tile_index-9])
+                if tiles[tile_index-9].piece.colour =="white":
+                    legal_moves.append(tiles[tile_index-9])
 
             if self.tile.cordinate[0] != 7:
                 if tiles[tile_index+7].piece is not None:
-                    legal_moves.append(tiles[tile_index+7])
+                    if tiles[tile_index+7].piece.colour =="white":
+                        legal_moves.append(tiles[tile_index+7])
         return legal_moves
 
 
     def __str__(self):
         return f"I is {self.colour} pawn on {str(self.tile)}"
+
+class Rook:
+    def __init__(self, tile, colour, sprite, size: list):
+        self.tile = tile
+        self.update_tile()
+        self.first_move = True
+        self.colour = colour
+        self.sprite = sprite
+        self.size = size    #[width, heigth]
+
+    def legal_moves(self, tiles):
+        tile_index = tiles.index(self.tile)
+        legal_moves = []
+        if tiles[tile_index].cordinate[0] > 0:
+            for tile in tiles[tile_index-1:tile_index-(self.tile.cordinate[1]+1):-1]: #up
+                if tile.piece is not None:
+                    if tile.piece.colour != self.colour:
+                        legal_moves.append(tile)
+                    break
+                elif tile.piece is None:
+                    legal_moves.append(tile)
+
+        elif tiles[tile_index].cordinate[0] == 0:
+            for i in range(tiles[tile_index].cordinate[1]): #up
+                if tiles[tile_index-1-i].piece is not None:
+                    if tiles[tile_index-1-i].piece.colour != self.colour:
+                        legal_moves.append(tiles[tile_index-1-i])
+                    break
+                elif tiles[tile_index-1-i].piece is None:
+                    legal_moves.append(tiles[tile_index-1-i])
+
+
+        for tile in tiles[tile_index+1:tile_index+(8-self.tile.cordinate[1])]: #down
+            if tile.piece is not None:
+                if tile.piece.colour != self.colour:
+                    legal_moves.append(tile)
+                break
+            elif tile.piece is None:
+                legal_moves.append(tile)
+
+        for tile in tiles[tile_index+8::8]:     #right
+            if tile.piece is not None:
+                if tile.piece.colour != self.colour:
+                    legal_moves.append(tile)
+                break
+            elif tile.piece is None:
+                legal_moves.append(tile)
+
+        if tile_index-8 > 0:
+            for tile in tiles[tile_index-8::-8]:    #left
+                if tile.piece is not None:
+                    if tile.piece.colour != self.colour:
+                        legal_moves.append(tile)
+                    break
+                elif tile.piece is None:
+                    legal_moves.append(tile)
+
+        return legal_moves
+
+    def update_piece_and_tile(self, new_tile):
+        self.tile.got_piece(None)
+        new_tile.got_piece(self)
+        self.tile = new_tile
+
+    def update_tile(self):
+        self.tile.got_piece(self)
+
+
+class Bishop:
+    pass
+
+class Knight:
+    pass
+
+class Queen:
+    pass
+
+class King:
+    pass
+
 
