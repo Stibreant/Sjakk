@@ -2,6 +2,7 @@ import tkinter
 from PIL import ImageTk, Image
 from Klasser import *
 
+# Mangler: bondeforvandling, brikker kan ikke flyttes hvis kongen kommer i sjakk og sjakkmatt.
 
 class SjakkSpill:
     def __init__(self):
@@ -91,6 +92,8 @@ class SjakkSpill:
 
         self.white_pieces_taken = 0
         self.black_pieces_taken = 0
+        self.white_checked = False
+        self.black_checked = False
 
         self.clicked_tile = False
         self.previous_clicked_tile = None
@@ -134,7 +137,6 @@ class SjakkSpill:
                 else:
                     self.display_legal_moves(tile.piece.legal_moves(self.tiles))
                 self.clicked_tile = True
-
         self.previous_clicked_tile = tile
 
     def display_legal_moves(self, tiles):
@@ -148,16 +150,32 @@ class SjakkSpill:
         self.avaliable_dots =[]
         self.avaliable_tiles = []
 
-    def move_piece(self, tile):
+    def move_piece(self, tile, was_castle = False):
         if self.previous_clicked_tile.piece is not None:
             self.board.coords(self.previous_clicked_tile.piece.sprite, tile.position[0]+4, tile.position[1]+4)
-            self.previous_clicked_tile.piece.first_move = False
             if tile.piece is not None:      # If piece is taken, move piece to a player
                 self.remove_piece(tile, tile.piece)
             self.took_piece_with_en_passant(tile)
             self.enable_en_passant(tile)
             self.previous_clicked_tile.piece.update_piece_and_tile(tile)
-            self.update_turn()
+            self.board.tag_bind(tile.piece.sprite, "<Button-1>", lambda event, a=tile: self.clicked(a))
+            if type(tile.piece == King) and tile.piece.first_move and ((tile == self.tiles[16]) or (tile == self.tiles[48]) or (tile == self.tiles[55]) or (tile == self.tiles[23])):
+                self.castling(tile)
+            tile.piece.first_move = False
+            if not was_castle:
+                self.update_turn()
+
+    def castling(self, tile):
+        tile_index = self.tiles.index(tile)
+        if tile == self.tiles[16] or tile == self.tiles[23]:
+            self.previous_clicked_tile = self.tiles[tile_index-16]
+            self.move_piece(self.tiles[tile_index+8], True)
+        if tile == self.tiles[48] or tile == self.tiles[55]:
+            self.previous_clicked_tile = self.tiles[tile_index+8]
+            self.move_piece(self.tiles[tile_index-8], True)
+
+    def checked(self):
+        pass
 
     def update_turn(self):
         if self.turn == "white":

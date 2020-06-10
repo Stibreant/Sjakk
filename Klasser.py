@@ -15,8 +15,8 @@ class Tile:
         master.board.tag_bind(test,"<Button-1>", lambda event, a=self: master.clicked(a))
         self.sprite = test
 
-    def got_piece(self, piece):
-        self.piece = piece
+    def got_piece(self, new_piece):
+        self.piece = new_piece
 
     def avaliable_move(self, canvas):
         dot = canvas.create_oval(self.position[0] + 0.5*(self.size - self.avaliavbe_size), self.position[1] + 0.5*(self.size - self.avaliavbe_size),
@@ -501,8 +501,32 @@ class King:
         if self.tile.cordinate[0] > 0 and self.tile_empty_or_has_opposite_colour_piece(tiles[tile_index-8], checking_defending_pieces): # We can move left
             mengde_med_tiles.add(tiles[tile_index-8])
 
+        if checking_defending_pieces == False:
+            for move in self.legal_castle_moves(tiles, tile_index, attacked_tiles):
+                mengde_med_tiles.add(move)
+
+
         mengde_med_tiles = mengde_med_tiles.difference(attacked_tiles)
         return mengde_med_tiles
+
+    def legal_castle_moves(self, tiles, tile_index, attacked_tiles):
+        castling_moves =[]
+        if self.first_move:
+            # can queen-side castle
+            if (tiles[tile_index-8] not in attacked_tiles and tiles[tile_index-8].piece == None) and (tiles[tile_index-16] not in attacked_tiles and tiles[tile_index-16].piece == None) and (tiles[tile_index-24] not in attacked_tiles and tiles[tile_index-24].piece == None)\
+                    and (type(tiles[tile_index-32].piece) == Rook and tiles[tile_index-32].piece.first_move):
+                castling_moves.append(tiles[tile_index-16])
+                print("Can queen-side castle")
+
+            # can king-side castle
+            if (tiles[tile_index+8] not in attacked_tiles and tiles[tile_index+8].piece == None) and (tiles[tile_index+16] not in attacked_tiles and tiles[tile_index+16].piece == None)\
+                    and (type(tiles[tile_index+24].piece) == Rook and tiles[tile_index+24].piece.first_move):
+                castling_moves.append(tiles[tile_index+16])
+                print("Can king-side castle")
+
+        return castling_moves
+
+
 
     def tile_empty_or_has_opposite_colour_piece(self, tile, checking_defending_pieces = False):
         if tile.piece is None:
