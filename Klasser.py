@@ -66,6 +66,8 @@ class Pawn:
         self.tile = new_tile
 
     def legal_moves(self, tiles):
+        if self.tile == None:
+            return set()
         tile_index = tiles.index(self.tile)
         legal_moves = self.can_attack_piece(tiles, tile_index)
 
@@ -175,52 +177,99 @@ class Rook:
         self.colour = colour
         self.sprite = sprite
 
-    def legal_moves(self, tiles, checking_defending_pieces = False):
+    def legal_moves(self, tiles, checking_defending_pieces = False, finding_checked_line = False):
+        if self.tile == None:
+            return set()
+
         tile_index = tiles.index(self.tile)
-        legal_moves = []
+        legal_moves = set()
+        checked_line = set()
+
         if tiles[tile_index].cordinate[0] > 0:
             for tile in tiles[tile_index-1:tile_index-(self.tile.cordinate[1]+1):-1]: #up
                 if tile.piece is not None:
-                    if tile.piece.colour != self.colour or checking_defending_pieces:
-                        legal_moves.append(tile)
-                    break
+                    if finding_checked_line:
+                        if type(tile.piece) == King and self.colour != tile.piece.colour:
+                            return checked_line
+                    elif tile.piece.colour != self.colour or checking_defending_pieces:
+                        legal_moves.add(tile)
+                    if checking_defending_pieces and type(tile.piece) == King:
+                        pass
+                    else:
+                        break
                 elif tile.piece is None:
-                    legal_moves.append(tile)
+                    legal_moves.add(tile)
+                    if finding_checked_line:
+                        checked_line.add(tile)
 
         elif tiles[tile_index].cordinate[0] == 0:
             for i in range(tiles[tile_index].cordinate[1]): #up
                 if tiles[tile_index-1-i].piece is not None:
-                    if tiles[tile_index-1-i].piece.colour != self.colour or checking_defending_pieces:
-                        legal_moves.append(tiles[tile_index-1-i])
-                    break
+                    if finding_checked_line:
+                        if type(tiles[tile_index-1-i].piece) == King and self.colour != tiles[tile_index-1-i].piece.colour:
+                            return checked_line
+                    elif tiles[tile_index-1-i].piece.colour != self.colour or checking_defending_pieces:
+                        legal_moves.add(tiles[tile_index-1-i])
+                    if checking_defending_pieces and type(tiles[tile_index-1-i].piece) == King:
+                        pass
+                    else:
+                        break
                 elif tiles[tile_index-1-i].piece is None:
-                    legal_moves.append(tiles[tile_index-1-i])
+                    legal_moves.add(tiles[tile_index-1-i])
+                    if finding_checked_line:
+                        checked_line.add(tiles[tile_index-1-i])
 
-
+        checked_line = set()
         for tile in tiles[tile_index+1:tile_index+(8-self.tile.cordinate[1])]: #down
             if tile.piece is not None:
-                if tile.piece.colour != self.colour or checking_defending_pieces:
-                    legal_moves.append(tile)
-                break
+                if finding_checked_line:
+                        if type(tile.piece) == King and self.colour != tile.piece.colour:
+                            return checked_line
+                elif tile.piece.colour != self.colour or checking_defending_pieces:
+                    legal_moves.add(tile)
+                if checking_defending_pieces and type(tile.piece) == King:
+                    pass
+                else:
+                    break
             elif tile.piece is None:
-                legal_moves.append(tile)
+                legal_moves.add(tile)
+                if finding_checked_line:
+                        checked_line.add(tile)
 
+        checked_line = set()
         for tile in tiles[tile_index+8::8]:     #right
             if tile.piece is not None:
-                if tile.piece.colour != self.colour or checking_defending_pieces:
-                    legal_moves.append(tile)
-                break
+                if finding_checked_line:
+                        if type(tile.piece) == King and self.colour != tile.piece.colour:
+                            return checked_line
+                elif tile.piece.colour != self.colour or checking_defending_pieces:
+                    legal_moves.add(tile)
+                if checking_defending_pieces and type(tile.piece) == King:
+                    pass
+                else:
+                    break
             elif tile.piece is None:
-                legal_moves.append(tile)
+                legal_moves.add(tile)
+                if finding_checked_line:
+                        checked_line.add(tile)
 
+        checked_line = set()
         if tile_index-8 > 0:
             for tile in tiles[tile_index-8::-8]:    #left
                 if tile.piece is not None:
-                    if tile.piece.colour != self.colour or checking_defending_pieces:
-                        legal_moves.append(tile)
-                    break
+                    if finding_checked_line:
+                        if type(tile.piece) == King and self.colour != tile.piece.colour:
+                            return checked_line
+                    elif tile.piece.colour != self.colour or checking_defending_pieces:
+                        legal_moves.add(tile)
+                    if checking_defending_pieces and type(tile.piece) == King:
+                        pass
+                    else:
+                        break
                 elif tile.piece is None:
-                    legal_moves.append(tile)
+                    legal_moves.add(tile)
+                    if finding_checked_line:
+                        checked_line.add(tile)
         return legal_moves
 
     def update_piece_and_tile(self, new_tile):
@@ -248,50 +297,89 @@ class Bishop:
     def update_tile(self):
         self.tile.got_piece(self)
 
-    def legal_moves(self, tiles, checking_defending_pieces = False):
+    def legal_moves(self, tiles, checking_defending_pieces = False, finding_checked_line = False):
+        if self.tile == None:
+            return set()
+
         tile_index = tiles.index(self.tile)
-        legal_moves = []
+        legal_moves = set()
+        checked_line = set()
 
         for tile in tiles[tile_index+7::7]: #up-right
             if tile.cordinate[1] == 7 or tile.cordinate[0] == 0:
                 break
             if tile.piece is not None:
-                if tile.piece.colour != self.colour or checking_defending_pieces:
-                    legal_moves.append(tile)
-                break
-            elif tile.piece is None:
-                legal_moves.append(tile)
+                if finding_checked_line:
+                    if type(tile.piece) == King:
+                        return checked_line
+                elif tile.piece.colour != self.colour or checking_defending_pieces:
+                    legal_moves.add(tile)
 
+                if checking_defending_pieces and type(tile.piece) == King:
+                    pass
+                else:
+                    break
+            elif tile.piece is None:
+                legal_moves.add(tile)
+                if finding_checked_line:
+                    checked_line.add(tile)
+
+        checked_line = set()
         for tile in tiles[tile_index+9::9]: #down-right
             if tile.cordinate[1] == 0 or tile.cordinate[0] == 0:
                 break
             if tile.piece is not None:
-                if tile.piece.colour != self.colour  or checking_defending_pieces:
-                    legal_moves.append(tile)
-                break
+                if finding_checked_line:
+                    if type(tile.piece) == King:
+                        return checked_line
+                elif tile.piece.colour != self.colour or checking_defending_pieces:
+                    legal_moves.add(tile)
+                if checking_defending_pieces and type(tile.piece) == King:
+                    pass
+                else:
+                    break
             elif tile.piece is None:
-                legal_moves.append(tile)
+                legal_moves.add(tile)
+                if finding_checked_line:
+                    checked_line.add(tile)
 
-
+        checked_line = set()
         for tile in tiles[tile_index-7::-7]: #down-left
             if tile.cordinate[1] == 0 or tile.cordinate[0] == 7 or tiles[tile_index].cordinate[1] == 7:
                 break
             if tile.piece is not None:
-                if tile.piece.colour != self.colour or checking_defending_pieces:
-                    legal_moves.append(tile)
-                break
+                if finding_checked_line:
+                    if type(tile.piece) == King:
+                        return checked_line
+                elif tile.piece.colour != self.colour or checking_defending_pieces:
+                    legal_moves.add(tile)
+                if checking_defending_pieces and type(tile.piece) == King:
+                    pass
+                else:
+                    break
             elif tile.piece is None:
-                legal_moves.append(tile)
+                legal_moves.add(tile)
+                if finding_checked_line:
+                    checked_line.add(tile)
 
+        checked_line = set()
         for tile in tiles[tile_index-9::-9]: #up-left
             if tile.cordinate[1] == 7 or tile.cordinate[0] == 7 or tiles[tile_index].cordinate[1] == 0:
                 break
             if tile.piece is not None:
-                if tile.piece.colour != self.colour or checking_defending_pieces:
-                    legal_moves.append(tile)
-                break
+                if finding_checked_line:
+                    if type(tile.piece) == King:
+                        return checked_line
+                elif tile.piece.colour != self.colour or checking_defending_pieces:
+                    legal_moves.add(tile)
+                if checking_defending_pieces and type(tile.piece) == King:
+                    pass
+                else:
+                    break
             elif tile.piece is None:
-                legal_moves.append(tile)
+                legal_moves.add(tile)
+                if finding_checked_line:
+                    checked_line.add(tile)
 
         return legal_moves
 
@@ -311,94 +399,176 @@ class Queen:
     def update_tile(self):
         self.tile.got_piece(self)
 
-    def legal_moves(self, tiles, checking_defending_pieces = False):
+    def legal_moves(self, tiles, checking_defending_pieces = False, finding_checked_line = False):
+        if self.tile == None:
+            return set()
+
         tile_index = tiles.index(self.tile)
-        legal_moves = []
+        legal_moves = set()
+        checked_line = set()
 
         for tile in tiles[tile_index+7::7]: #up-right
             if tile.cordinate[1] == 7 or tile.cordinate[0] == 0:
                 break
             if tile.piece is not None:
-                if tile.piece.colour != self.colour or checking_defending_pieces:
-                    legal_moves.append(tile)
-                break
-            elif tile.piece is None:
-                legal_moves.append(tile)
+                if finding_checked_line:
+                    if type(tile.piece) == King and self.colour != tile.piece.colour:
+                        return checked_line
+                elif tile.piece.colour != self.colour or checking_defending_pieces:
+                    legal_moves.add(tile)
 
+                if checking_defending_pieces and type(tile.piece) == King:
+                    pass
+                else:
+                    break
+            elif tile.piece is None:
+                legal_moves.add(tile)
+                if finding_checked_line:
+                    checked_line.add(tile)
+
+        checked_line = set()
         for tile in tiles[tile_index+9::9]: #down-right
             if tile.cordinate[1] == 0 or tile.cordinate[0] == 0:
                 break
             if tile.piece is not None:
-                if tile.piece.colour != self.colour or checking_defending_pieces:
-                    legal_moves.append(tile)
-                break
+                if finding_checked_line:
+                    if type(tile.piece) == King and self.colour != tile.piece.colour:
+                        return checked_line
+                elif tile.piece.colour != self.colour or checking_defending_pieces:
+                    legal_moves.add(tile)
+                if checking_defending_pieces and type(tile.piece) == King:
+                    pass
+                else:
+                    break
             elif tile.piece is None:
-                legal_moves.append(tile)
+                legal_moves.add(tile)
+                if finding_checked_line:
+                    checked_line.add(tile)
 
-
+        checked_line = set()
         for tile in tiles[tile_index-7::-7]: #down-left
             if tile.cordinate[1] == 0 or tile.cordinate[0] == 7 or tiles[tile_index].cordinate[1] == 7:
                 break
             if tile.piece is not None:
-                if tile.piece.colour != self.colour or checking_defending_pieces:
-                    legal_moves.append(tile)
-                break
+                if finding_checked_line:
+                    if type(tile.piece) == King and self.colour != tile.piece.colour:
+                        return checked_line
+                elif tile.piece.colour != self.colour or checking_defending_pieces:
+                    legal_moves.add(tile)
+                if checking_defending_pieces and type(tile.piece) == King:
+                    pass
+                else:
+                    break
             elif tile.piece is None:
-                legal_moves.append(tile)
+                legal_moves.add(tile)
+                if finding_checked_line:
+                    checked_line.add(tile)
 
+        checked_line = set()
         for tile in tiles[tile_index-9::-9]: #up-left
             if tile.cordinate[1] == 7 or tile.cordinate[0] == 7 or tiles[tile_index].cordinate[1] == 0:
                 break
             if tile.piece is not None:
-                if tile.piece.colour != self.colour or checking_defending_pieces:
-                    legal_moves.append(tile)
-                break
+                if finding_checked_line:
+                    if type(tile.piece) == King and self.colour != tile.piece.colour:
+                        return checked_line
+                elif tile.piece.colour != self.colour or checking_defending_pieces:
+                    legal_moves.add(tile)
+                if checking_defending_pieces and type(tile.piece) == King:
+                    pass
+                else:
+                    break
             elif tile.piece is None:
-                legal_moves.append(tile)
+                legal_moves.add(tile)
+                if finding_checked_line:
+                    checked_line.add(tile)
 
+        checked_line = set()
         if tiles[tile_index].cordinate[0] > 0:
             for tile in tiles[tile_index-1:tile_index-(self.tile.cordinate[1]+1):-1]: #up
                 if tile.piece is not None:
-                    if tile.piece.colour != self.colour or checking_defending_pieces:
-                        legal_moves.append(tile)
-                    break
+                    if finding_checked_line:
+                        if type(tile.piece) == King and self.colour != tile.piece.colour:
+                            return checked_line
+                    elif tile.piece.colour != self.colour or checking_defending_pieces:
+                        legal_moves.add(tile)
+                    if checking_defending_pieces and type(tile.piece) == King:
+                        pass
+                    else:
+                        break
                 elif tile.piece is None:
-                    legal_moves.append(tile)
+                    legal_moves.add(tile)
+                    if finding_checked_line:
+                        checked_line.add(tile)
 
         elif tiles[tile_index].cordinate[0] == 0:
             for i in range(tiles[tile_index].cordinate[1]): #up
                 if tiles[tile_index-1-i].piece is not None:
-                    if tiles[tile_index-1-i].piece.colour != self.colour or checking_defending_pieces:
-                        legal_moves.append(tiles[tile_index-1-i])
-                    break
+                    if finding_checked_line:
+                        if type(tiles[tile_index-1-i].piece) == King and self.colour != tiles[tile_index-1-i].piece.colour:
+                            return checked_line
+                    elif tiles[tile_index-1-i].piece.colour != self.colour or checking_defending_pieces:
+                        legal_moves.add(tiles[tile_index-1-i])
+                    if checking_defending_pieces and type(tiles[tile_index-1-i].piece) == King:
+                        pass
+                    else:
+                        break
                 elif tiles[tile_index-1-i].piece is None:
-                    legal_moves.append(tiles[tile_index-1-i])
+                    legal_moves.add(tiles[tile_index-1-i])
+                    if finding_checked_line:
+                        checked_line.add(tiles[tile_index-1-i])
 
-
-        for tile in tiles[tile_index+1:tile_index+(8-self.tile.cordinate[1])]: #down
+        checked_line = set()
+        for tile in tiles[tile_index+1:tile_index+(8-self.tile.cordinate[1])]:  # down
             if tile.piece is not None:
-                if tile.piece.colour != self.colour or checking_defending_pieces:
-                    legal_moves.append(tile)
-                break
+                if finding_checked_line:
+                    if type(tile.piece) == King and self.colour != tile.piece.colour:
+                        return checked_line
+                elif tile.piece.colour != self.colour or checking_defending_pieces:
+                    legal_moves.add(tile)
+                if checking_defending_pieces and type(tile.piece) == King:
+                    pass
+                else:
+                    break
             elif tile.piece is None:
-                legal_moves.append(tile)
+                legal_moves.add(tile)
+                if finding_checked_line:
+                    checked_line.add(tile)
 
-        for tile in tiles[tile_index+8::8]:     #right
+        checked_line = set()
+        for tile in tiles[tile_index+8::8]:  # right
             if tile.piece is not None:
-                if tile.piece.colour != self.colour or checking_defending_pieces:
-                    legal_moves.append(tile)
-                break
+                if finding_checked_line:
+                    if type(tile.piece) == King and self.colour != tile.piece.colour:
+                        return checked_line
+                elif tile.piece.colour != self.colour or checking_defending_pieces:
+                    legal_moves.add(tile)
+                if checking_defending_pieces and type(tile.piece) == King:
+                    pass
+                else:
+                    break
             elif tile.piece is None:
-                legal_moves.append(tile)
+                legal_moves.add(tile)
+                if finding_checked_line:
+                        checked_line.add(tile)
 
+        checked_line = set()
         if tile_index-8 > 0:
             for tile in tiles[tile_index-8::-8]:    #left
                 if tile.piece is not None:
-                    if tile.piece.colour != self.colour or checking_defending_pieces:
-                        legal_moves.append(tile)
-                    break
+                    if finding_checked_line:
+                        if type(tile.piece) == King and self.colour != tile.piece.colour:
+                            return checked_line
+                    elif tile.piece.colour != self.colour or checking_defending_pieces:
+                        legal_moves.add(tile)
+                    if checking_defending_pieces and type(tile.piece) == King:
+                        pass
+                    else:
+                        break
                 elif tile.piece is None:
-                    legal_moves.append(tile)
+                    legal_moves.add(tile)
+                    if finding_checked_line:
+                        checked_line.add(tile)
 
         return legal_moves
 
@@ -418,7 +588,10 @@ class Knight:
     def update_tile(self):
         self.tile.got_piece(self)
 
-    def legal_moves(self, tiles, checking_defending_pieces = False):
+    def legal_moves(self, tiles, checking_defending_pieces=False, finding_checked_line=False):
+        if self.tile == None:
+            return set()
+
         tile_index = tiles.index(self.tile)
         mengde_med_tiles = set()
 
