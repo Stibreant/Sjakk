@@ -54,6 +54,7 @@ class Pawn:
         self.colour = colour
         self.sprite = sprite
         self.en_passant = False
+        self.discovered_self_check = False
 
     def update_tile(self):
         self.tile.got_piece(self)
@@ -169,7 +170,7 @@ class Pawn:
         return legal_moves
 
     def __str__(self):
-        return f"I is {self.colour} pawn on {str(self.tile)}"
+        return f"P({self.tile})"
 
 
 class Rook:
@@ -180,6 +181,7 @@ class Rook:
         self.first_move = True
         self.colour = colour
         self.sprite = sprite
+        self.discovered_self_check = False
 
     def legal_moves(self, tiles, checking_defending_pieces=False, finding_checked_line=False):
         if self.tile is None:
@@ -197,10 +199,7 @@ class Rook:
                             return checked_line
                     elif tile.piece.colour != self.colour or checking_defending_pieces:
                         legal_moves.add(tile)
-                    if checking_defending_pieces and type(tile.piece) == King:
-                        pass
-                    else:
-                        break
+                    break
                 elif tile.piece is None:
                     legal_moves.add(tile)
                     if finding_checked_line:
@@ -214,10 +213,7 @@ class Rook:
                             return checked_line
                     elif tiles[tile_index-1-i].piece.colour != self.colour or checking_defending_pieces:
                         legal_moves.add(tiles[tile_index-1-i])
-                    if checking_defending_pieces and type(tiles[tile_index-1-i].piece) == King:
-                        pass
-                    else:
-                        break
+                    break
                 elif tiles[tile_index-1-i].piece is None:
                     legal_moves.add(tiles[tile_index-1-i])
                     if finding_checked_line:
@@ -231,10 +227,8 @@ class Rook:
                         return checked_line
                 elif tile.piece.colour != self.colour or checking_defending_pieces:
                     legal_moves.add(tile)
-                if checking_defending_pieces and type(tile.piece) == King:
-                    pass
-                else:
-                    break
+
+                break
             elif tile.piece is None:
                 legal_moves.add(tile)
                 if finding_checked_line:
@@ -248,10 +242,7 @@ class Rook:
                         return checked_line
                 elif tile.piece.colour != self.colour or checking_defending_pieces:
                     legal_moves.add(tile)
-                if checking_defending_pieces and type(tile.piece) == King:
-                    pass
-                else:
-                    break
+                break
             elif tile.piece is None:
                 legal_moves.add(tile)
                 if finding_checked_line:
@@ -266,15 +257,19 @@ class Rook:
                             return checked_line
                     elif tile.piece.colour != self.colour or checking_defending_pieces:
                         legal_moves.add(tile)
-                    if checking_defending_pieces and type(tile.piece) == King and self.colour != tile.piece.colour:
-                        pass
-                    else:
-                        break
+                    #  if checking_defending_pieces and type(tile.piece) == King and self.colour != tile.piece.colour:
+                    #  #  pass
+                    #  else:
+                    break
                 elif tile.piece is None:
                     legal_moves.add(tile)
                     if finding_checked_line:
                         checked_line.add(tile)
-        return legal_moves
+
+        if finding_checked_line:
+            return checked_line
+        else:
+            return legal_moves
 
     def update_piece_and_tile(self, new_tile, transforming=False):
         if not transforming:
@@ -284,6 +279,9 @@ class Rook:
 
     def update_tile(self):
         self.tile.got_piece(self)
+
+    def __str__(self):
+        return f"R({self.tile})"
 
 
 class Bishop:
@@ -294,6 +292,7 @@ class Bishop:
         self.first_move = True
         self.colour = colour
         self.sprite = sprite
+        self.discovered_self_check = False
 
     def update_piece_and_tile(self, new_tile, transforming=False):
         if not transforming:
@@ -321,11 +320,7 @@ class Bishop:
                         return checked_line
                 elif tile.piece.colour != self.colour or checking_defending_pieces:
                     legal_moves.add(tile)
-
-                if checking_defending_pieces and type(tile.piece) == King:
-                    pass
-                else:
-                    break
+                break
             elif tile.piece is None:
                 legal_moves.add(tile)
                 if finding_checked_line:
@@ -341,10 +336,7 @@ class Bishop:
                         return checked_line
                 elif tile.piece.colour != self.colour or checking_defending_pieces:
                     legal_moves.add(tile)
-                if checking_defending_pieces and type(tile.piece) == King:
-                    pass
-                else:
-                    break
+                break
             elif tile.piece is None:
                 legal_moves.add(tile)
                 if finding_checked_line:
@@ -360,10 +352,8 @@ class Bishop:
                         return checked_line
                 elif tile.piece.colour != self.colour or checking_defending_pieces:
                     legal_moves.add(tile)
-                if checking_defending_pieces and type(tile.piece) == King:
-                    pass
-                else:
-                    break
+                break
+
             elif tile.piece is None:
                 legal_moves.add(tile)
                 if finding_checked_line:
@@ -379,16 +369,19 @@ class Bishop:
                         return checked_line
                 elif tile.piece.colour != self.colour or checking_defending_pieces:
                     legal_moves.add(tile)
-                if checking_defending_pieces and type(tile.piece) == King:
-                    pass
-                else:
-                    break
+                break
             elif tile.piece is None:
                 legal_moves.add(tile)
                 if finding_checked_line:
                     checked_line.add(tile)
 
-        return legal_moves
+        if finding_checked_line:
+            return checked_line
+        else:
+            return legal_moves
+
+    def __str__(self):
+        return f"B({self.tile})"
 
 
 class Queen:
@@ -399,6 +392,7 @@ class Queen:
         self.first_move = True
         self.colour = colour
         self.sprite = sprite
+        self.discovered_self_check = False
 
     def update_piece_and_tile(self, new_tile, transforming=False):
         if not transforming:
@@ -426,11 +420,7 @@ class Queen:
                         return checked_line
                 elif tile.piece.colour != self.colour or checking_defending_pieces:
                     legal_moves.add(tile)
-
-                if checking_defending_pieces and type(tile.piece) == King:
-                    pass
-                else:
-                    break
+                break
             elif tile.piece is None:
                 legal_moves.add(tile)
                 if finding_checked_line:
@@ -446,10 +436,7 @@ class Queen:
                         return checked_line
                 elif tile.piece.colour != self.colour or checking_defending_pieces:
                     legal_moves.add(tile)
-                if checking_defending_pieces and type(tile.piece) == King:
-                    pass
-                else:
-                    break
+                break
             elif tile.piece is None:
                 legal_moves.add(tile)
                 if finding_checked_line:
@@ -465,10 +452,7 @@ class Queen:
                         return checked_line
                 elif tile.piece.colour != self.colour or checking_defending_pieces:
                     legal_moves.add(tile)
-                if checking_defending_pieces and type(tile.piece) == King:
-                    pass
-                else:
-                    break
+                break
             elif tile.piece is None:
                 legal_moves.add(tile)
                 if finding_checked_line:
@@ -484,10 +468,7 @@ class Queen:
                         return checked_line
                 elif tile.piece.colour != self.colour or checking_defending_pieces:
                     legal_moves.add(tile)
-                if checking_defending_pieces and type(tile.piece) == King:
-                    pass
-                else:
-                    break
+                break
             elif tile.piece is None:
                 legal_moves.add(tile)
                 if finding_checked_line:
@@ -502,10 +483,7 @@ class Queen:
                             return checked_line
                     elif tile.piece.colour != self.colour or checking_defending_pieces:
                         legal_moves.add(tile)
-                    if checking_defending_pieces and type(tile.piece) == King:
-                        pass
-                    else:
-                        break
+                    break
                 elif tile.piece is None:
                     legal_moves.add(tile)
                     if finding_checked_line:
@@ -519,10 +497,7 @@ class Queen:
                             return checked_line
                     elif tiles[tile_index-1-i].piece.colour != self.colour or checking_defending_pieces:
                         legal_moves.add(tiles[tile_index-1-i])
-                    if checking_defending_pieces and type(tiles[tile_index-1-i].piece) == King:
-                        pass
-                    else:
-                        break
+                    break
                 elif tiles[tile_index-1-i].piece is None:
                     legal_moves.add(tiles[tile_index-1-i])
                     if finding_checked_line:
@@ -536,10 +511,7 @@ class Queen:
                         return checked_line
                 elif tile.piece.colour != self.colour or checking_defending_pieces:
                     legal_moves.add(tile)
-                if checking_defending_pieces and type(tile.piece) == King:
-                    pass
-                else:
-                    break
+                break
             elif tile.piece is None:
                 legal_moves.add(tile)
                 if finding_checked_line:
@@ -553,10 +525,7 @@ class Queen:
                         return checked_line
                 elif tile.piece.colour != self.colour or checking_defending_pieces:
                     legal_moves.add(tile)
-                if checking_defending_pieces and type(tile.piece) == King:
-                    pass
-                else:
-                    break
+                break
             elif tile.piece is None:
                 legal_moves.add(tile)
                 if finding_checked_line:
@@ -571,16 +540,19 @@ class Queen:
                             return checked_line
                     elif tile.piece.colour != self.colour or checking_defending_pieces:
                         legal_moves.add(tile)
-                    if checking_defending_pieces and type(tile.piece) == King:
-                        pass
-                    else:
-                        break
+                    break
                 elif tile.piece is None:
                     legal_moves.add(tile)
                     if finding_checked_line:
                         checked_line.add(tile)
 
-        return legal_moves
+        if finding_checked_line:
+            return checked_line
+        else:
+            return legal_moves
+
+    def __str__(self):
+        return f"Q({self.tile})"
 
 
 class Knight:
@@ -591,13 +563,13 @@ class Knight:
         self.first_move = True
         self.colour = colour
         self.sprite = sprite
+        self.discovered_self_check = False
 
     def update_piece_and_tile(self, new_tile, transforming=False):
         if not transforming:
             self.tile.got_piece(None)
         self.tile = new_tile
         new_tile.got_piece(self)
-
 
     def update_tile(self):
         self.tile.got_piece(self)
@@ -646,6 +618,9 @@ class Knight:
         else:
             return False
 
+    def __str__(self):
+        return f"Kn({self.tile})"
+
 
 class King:
     def __init__(self, tile, colour, sprite):
@@ -654,6 +629,7 @@ class King:
         self.first_move = True
         self.colour = colour
         self.sprite = sprite
+        self.blocking_pieces = []
 
     def update_piece_and_tile(self, new_tile, transforming=False):
         if not transforming:
@@ -721,3 +697,71 @@ class King:
             return True
         else:
             return False
+
+    def potential_checking_lines(self, tiles):
+        tile_index = tiles.index(self.tile)
+        legal_moves = set()
+        self.blocking_pieces = []
+
+        for tile in tiles[tile_index+7::7]:  # up-right
+            if tile.cordinate[1] == 7 or tile.cordinate[0] == 0:
+                break
+            if self.specific_line_checking(tile, [Queen, Bishop]):
+                break
+        self.blocking_pieces = []
+
+        for tile in tiles[tile_index-9::-9]:  # up-left
+            if tile.cordinate[1] == 7 or tile.cordinate[0] == 7 or tiles[tile_index].cordinate[1] == 0:
+                break
+            if self.specific_line_checking(tile, [Queen, Bishop]):
+                break
+        self.blocking_pieces = []
+
+        for tile in tiles[tile_index+9::9]:  # down-right
+            if tile.cordinate[1] == 0 or tile.cordinate[0] == 0:
+                break
+            if self.specific_line_checking(tile, [Queen, Bishop]):
+                break
+        self.blocking_pieces = []
+
+        for tile in tiles[tile_index-7::-7]:  # down-left
+            if tile.cordinate[1] == 0 or tile.cordinate[0] == 7 or tiles[tile_index].cordinate[1] == 7:
+                break
+            if self.specific_line_checking(tile, [Queen, Bishop]):
+                break
+        blocking_pieces = []
+
+        for tile in tiles[tile_index+1:tile_index+(8-self.tile.cordinate[1])]:  # down
+            if self.specific_line_checking(tile, [Queen, Rook]):
+                break
+        self.blocking_pieces = []
+
+        for tile in tiles[tile_index+8::8]:  # right
+            if self.specific_line_checking(tile, [Queen, Rook]):
+                break
+        self.blocking_pieces = []
+
+        if tile_index-8 > 0:
+            for tile in tiles[tile_index-8::-8]:  # left
+                if self.specific_line_checking(tile, [Queen, Rook]):
+                    break
+        self.blocking_pieces = []
+
+        for tile in tiles[tile_index-1:tile_index-(self.tile.cordinate[1]+1):-1]:  # up
+            if tile.cordinate[1] == 7 or tiles[tile_index].cordinate[1] == 0:
+                break
+            if self.specific_line_checking(tile, [Queen, Rook]):
+                break
+        self.blocking_pieces = []
+
+    def specific_line_checking(self, tile, types):
+        if tile.piece is not None:
+            if tile.piece.colour == self.colour and len(self.blocking_pieces) == 0:
+                self.blocking_pieces.append(tile.piece)
+            elif tile.piece.colour != self.colour and len(self.blocking_pieces) == 1 and (type(tile.piece) == types[0] or type(tile.piece) == types[1]):
+                self.blocking_pieces[0].discovered_self_check = True
+                print(f"Can't move {self.blocking_pieces[0]}")
+                return True
+            elif (tile.piece.colour != self.colour and len(self.blocking_pieces) == 0) or (len(self.blocking_pieces) == 1 and tile.piece.colour == self.colour):
+                return True
+        return False

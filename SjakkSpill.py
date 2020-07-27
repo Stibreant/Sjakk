@@ -3,15 +3,15 @@ from tkinter import messagebox
 from PIL import ImageTk, Image
 from Klasser import *
 
-# Mangler: Brikker kan ikke flyttes hvis kongen kommer i sjakk
-
+# Mangler: Brikker kan ikke flyttes hvis kongen kommer i sjakk, kongen gå bak selv om en brikke angriper kongen vertikalt. Trur faen ikke det sånn før :(
+# Programmet klarer nå å finne disse brikken, må bare legge inn et system på hvordan man ikke får gjøre trekket. Trur en if i legal_moves skal være nok.
 
 class SjakkSpill:
     def __init__(self):
         self.master = tkinter.Tk()
         self.master.title("Chess")
-        self.width = 2560  # 1280 2736/2 2560
-        self.height = 1440  # 720  # 1824/2 1440
+        self.width = 800  # 1280 2736/2 2560
+        self.height = 600  # 720  # 1824/2 1440
         self.board = tkinter.Canvas(self.master, width=self.width, height=self.height)
         self.board.pack()
         self.turn = "white"
@@ -26,7 +26,7 @@ class SjakkSpill:
         self.black_pieces = set()
 
         self.square_starty = self.height*0.15
-        self.square_startx = self.width*0.2
+        self.square_startx = self.width*0.3
         self.square_size = self.width*0.05
         self.make_board()
 
@@ -39,7 +39,7 @@ class SjakkSpill:
         self.black_pawn = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
         self.pawns = []
-        self.make_pawns()
+        #self.make_pawns()
 
         img = Image.open("pieces/white_rook.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
@@ -83,7 +83,7 @@ class SjakkSpill:
         self.black_queen = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
         self.queens = []
-        self.make_queens()
+        #self.make_queens()
 
         img = Image.open("pieces/white_king.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
@@ -319,11 +319,13 @@ class SjakkSpill:
     def update_turn(self):
         if self.turn == "white":
             self.turn = "black"
+            self.can_piece_move_discovered_check()
             for pawn in self.pawns:
                 if pawn.colour == "black":
                     pawn.en_passant = False
         elif self.turn == "black":
             self.turn = "white"
+            self.can_piece_move_discovered_check()
             for pawn in self.pawns:
                 if pawn.colour == "white":
                     pawn.en_passant = False
@@ -374,6 +376,25 @@ class SjakkSpill:
             for square in attacking:
                 self.white_attacking_tiles.add(square)
 
+    def can_piece_move_discovered_check(self):
+            for king in self.kings:
+                if king.colour == "white" and self.turn == "white":
+                    king.potential_checking_lines(self.tiles)
+                elif king.colour == "black" and self.turn == "black":
+                    king.potential_checking_lines(self.tiles)
+                # Treng ikke if, kun i debugginga blir det lettere.
+
+            #for piece in self.black_pieces:
+             #   moves = set()
+              #  if type(piece) != King and type(piece) != Knight and type(piece) != Pawn:
+               #     for move in piece.legal_moves(self.tiles, False, True):
+                #        moves.add(move)
+                 #   for tile in moves:
+                  #      print(tile)
+                   #     if tile.piece is not None:
+                    #        print(tile.piece.legal_moves.intersecton(moves))
+                     #       print("I LIKE PENIS")
+
     def update_black_attacking_tiles(self):
         self.black_attacking_tiles = set()
         for piece in self.black_pieces:
@@ -385,6 +406,8 @@ class SjakkSpill:
                 attacking = piece.tiles_i_could_attack(self.tiles)  # Pawns working :)
             for square in attacking:
                 self.black_attacking_tiles.add(square)
+        #  for q in self.black_attacking_tiles:
+        #    print(q)
 
     def pawn_transforamtion(self, tile):
         y_translation = 100
@@ -442,7 +465,6 @@ class SjakkSpill:
             self.board.tag_bind(bishop.sprite, "<Button-1>", lambda event, a=tile, b=bishop, c=transformation_options: self.transfomation(a, b, c))
             self.board.tag_bind(knight.sprite, "<Button-1>", lambda event, a=tile, b=knight, c=transformation_options: self.transfomation(a, b, c))
             self.black_pieces.remove(tile.piece)
-
 
     def transfomation(self, tile, new_piece, transformaiton_options):
         print(f"pawn on {tile} choose {new_piece}")
