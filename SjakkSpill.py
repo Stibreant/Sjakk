@@ -1,17 +1,16 @@
 import tkinter
 from tkinter import messagebox
 from PIL import ImageTk, Image
-from Klasser import *
+from Klasser import Tile, Rook, Bishop, Knight, King, Pawn, Queen
 
-# Mangler: Brikker kan ikke flyttes hvis kongen kommer i sjakk, kongen gå bak selv om en brikke angriper kongen vertikalt. Trur faen ikke det sånn før :(
-# Programmet klarer nå å finne disse brikken, må bare legge inn et system på hvordan man ikke får gjøre trekket. Trur en if i legal_moves skal være nok.
+# DONE Mangler: Brikker kan ikke flyttes hvis kongen kommer i sjakk
 
 class SjakkSpill:
     def __init__(self):
         self.master = tkinter.Tk()
         self.master.title("Chess")
-        self.width = 800  # 1280 2736/2 2560
-        self.height = 600  # 720  # 1824/2 1440
+        self.width = 1280  # 1280 2736/2 2560
+        self.height = 720  # 720  # 1824/2 1440
         self.board = tkinter.Canvas(self.master, width=self.width, height=self.height)
         self.board.pack()
         self.turn = "white"
@@ -30,66 +29,66 @@ class SjakkSpill:
         self.square_size = self.width*0.05
         self.make_board()
 
-        img = Image.open("pieces/white_pawn.png")  # PIL solution
+        img = Image.open("Sjakk/pieces/white_pawn.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
         self.white_pawn = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
-        img = Image.open("pieces/black_pawn.png")  # PIL solution
+        img = Image.open("Sjakk/pieces/black_pawn.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
         self.black_pawn = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
         self.pawns = []
-        #self.make_pawns()
+        self.make_pawns()
 
-        img = Image.open("pieces/white_rook.png")  # PIL solution
+        img = Image.open("Sjakk/pieces/white_rook.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
         self.white_rook = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
-        img = Image.open("pieces/black_rook.png")  # PIL solution
+        img = Image.open("Sjakk/pieces/black_rook.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
         self.black_rook = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
         self.rooks = []
         self.make_rooks()
 
-        img = Image.open("pieces/white_knight.png")  # PIL solution
+        img = Image.open("Sjakk/pieces/white_knight.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
         self.white_knight = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
-        img = Image.open("pieces/black_knight.png")  # PIL solution
+        img = Image.open("Sjakk/pieces/black_knight.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
         self.black_knight = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
         self.knights = []
         self.make_knights()
 
-        img = Image.open("pieces/white_bishop.png")  # PIL solution
+        img = Image.open("Sjakk/pieces/white_bishop.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
         self.white_bishop = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
-        img = Image.open("pieces/black_bishop.png")  # PIL solution
+        img = Image.open("Sjakk/pieces/black_bishop.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
         self.black_bishop = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
         self.bishops = []
         self.make_bishops()
 
-        img = Image.open("pieces/white_queen.png")  # PIL solution
+        img = Image.open("Sjakk/pieces/white_queen.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
         self.white_queen = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
-        img = Image.open("pieces/black_queen.png")  # PIL solution
+        img = Image.open("Sjakk/pieces/black_queen.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
         self.black_queen = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
         self.queens = []
-        #self.make_queens()
+        self.make_queens()
 
-        img = Image.open("pieces/white_king.png")  # PIL solution
+        img = Image.open("Sjakk/pieces/white_king.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
         self.white_king = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
-        img = Image.open("pieces/black_king.png")  # PIL solution
+        img = Image.open("Sjakk/pieces/black_king.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
         self.black_king = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
@@ -129,9 +128,9 @@ class SjakkSpill:
                     self.remove_legal_moves()
                     if tile.piece is not None and self.turn == tile.piece.colour:  # Show new moves for that square.
                         if type(tile.piece) == King and self.turn == "white":
-                            self.display_legal_moves(tile.piece.legal_moves(self.tiles, self.black_attacking_tiles))
+                            self.display_legal_moves(tile.piece.legal_moves(self.tiles, self.black_attacking_tiles, False, self.white_checked))
                         elif type(tile.piece) == King and self.turn == "black":
-                            self.display_legal_moves(tile.piece.legal_moves(self.tiles, self.white_attacking_tiles))
+                            self.display_legal_moves(tile.piece.legal_moves(self.tiles, self.white_attacking_tiles, False, self.black_checked))
                         else:
                             if self.white_checked or self.black_checked:
                                 if len(self.checking_piece) == 1:
@@ -142,6 +141,16 @@ class SjakkSpill:
                                     stop_check_moves.add(self.checking_piece[0].tile)
                                     stop_check_moves = stop_check_moves.intersection(tile.piece.legal_moves(self.tiles))
                                     self.display_legal_moves(stop_check_moves)
+                            elif tile.piece.pinned:
+                                for king in self.kings:
+                                    if king.colour == self.turn:
+                                        for tuppel in king.blocking_pieces:
+                                            if tile.piece == tuppel[0]:
+                                                line_for_check = tuppel[2]
+                                                moves = line_for_check.intersection(tile.piece.legal_moves(self.tiles))
+                                                self.display_legal_moves(moves)
+                                                break
+
                             else:
                                 self.display_legal_moves(tile.piece.legal_moves(self.tiles))
                         self.clicked_tile = True
@@ -154,9 +163,9 @@ class SjakkSpill:
             elif not self.clicked_tile:  # if not showing moves
                 if tile.piece is not None and self.turn == tile.piece.colour:  # if piece show moves for piece
                     if type(tile.piece) == King and self.turn == "white":
-                        self.display_legal_moves(tile.piece.legal_moves(self.tiles, self.black_attacking_tiles))
+                        self.display_legal_moves(tile.piece.legal_moves(self.tiles, self.black_attacking_tiles, False, self.white_checked))
                     elif type(tile.piece) == King and self.turn == "black":
-                        self.display_legal_moves(tile.piece.legal_moves(self.tiles, self.white_attacking_tiles))
+                        self.display_legal_moves(tile.piece.legal_moves(self.tiles, self.white_attacking_tiles, False, self.black_checked))
                     else:
                         if self.white_checked or self.black_checked:
                             if len(self.checking_piece) == 1:
@@ -167,6 +176,15 @@ class SjakkSpill:
                                 stop_check_moves.add(self.checking_piece[0].tile)
                                 stop_check_moves = stop_check_moves.intersection(tile.piece.legal_moves(self.tiles))
                                 self.display_legal_moves(stop_check_moves)
+                        elif tile.piece.pinned and type(tile.piece) != King:
+                            for king in self.kings:
+                                if king.colour == self.turn:
+                                    for tuppel in king.blocking_pieces:
+                                        if tile.piece == tuppel[0]:
+                                            line_for_check = tuppel[2]
+                                            moves = line_for_check.intersection(tile.piece.legal_moves(self.tiles))
+                                            self.display_legal_moves(moves)
+                                            break
                         else:
                             self.display_legal_moves(tile.piece.legal_moves(self.tiles))
                     self.clicked_tile = True
@@ -240,7 +258,7 @@ class SjakkSpill:
                             if king.tile in p.legal_moves(self.tiles):
                                 self.checking_piece.append(p)
                     self.checkmate()
-                    print("black in checked")
+                    print("black in check")
                     break
                 else:
                     self.black_checked = False
@@ -252,7 +270,7 @@ class SjakkSpill:
         if self.white_checked:
             for piece in self.white_pieces:
                 if type(piece) != King:
-                    if len(self.checking_piece) == 1:
+                    if len(self.checking_piece) == 1 and type(self.checking_piece[0]) != Knight:
                         stop_check_moves = self.checking_piece[0].legal_moves(self.tiles, False, True)
                         stop_check_moves.add(self.checking_piece[0].tile)
                         stop_check_moves = stop_check_moves.intersection(piece.legal_moves(self.tiles))
@@ -320,6 +338,9 @@ class SjakkSpill:
         if self.turn == "white":
             self.turn = "black"
             self.can_piece_move_discovered_check()
+            for king in self.kings:
+                for tuppel in king.blocking_pieces:
+                    print(f"cant move {tuppel[0]}, because of {tuppel[1]}")
             for pawn in self.pawns:
                 if pawn.colour == "black":
                     pawn.en_passant = False
@@ -331,6 +352,8 @@ class SjakkSpill:
                     pawn.en_passant = False
         self.update_black_attacking_tiles()
         self.update_white_attacking_tiles()
+        for tile in self.black_attacking_tiles:
+            print(tile)
         self.checked()
         if not self.white_checked and not self.black_checked:
             self.stalemate()
