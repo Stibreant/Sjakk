@@ -4,12 +4,12 @@ def add_moves(myself, tile, finding_checked_line, checking_defending_pieces, che
         if finding_checked_line:
             if type(tile.piece) == King and tile.piece.colour != myself.colour:
                 return "found"
-        elif checking_defending_pieces:
+        elif checking_defending_pieces and type(tile.piece) == King:
             legal_moves.add(tile)
         else:
             if tile.piece.colour != myself.colour:
                 legal_moves.add(tile)
-            return "break"
+                return "break"
         
     elif tile.piece is None:
         legal_moves.add(tile)

@@ -280,7 +280,6 @@ class SjakkSpill:
                     stop_check_moves = piece.legal_moves(self.tiles, self.black_attacking_tiles)
                     for move in stop_check_moves:
                         possible_moves.add(move)
-            # print(len(possible_moves))
             if len(possible_moves) == 0:
                 messagebox.showinfo("Congrats", f"White checkmated, Black won!")
                 print("White checkmated, Black won!")
@@ -298,7 +297,6 @@ class SjakkSpill:
                     stop_check_moves = piece.legal_moves(self.tiles, self.white_attacking_tiles)
                     for move in stop_check_moves:
                         possible_moves.add(move)
-            # print(len(possible_moves))
             if len(possible_moves) == 0:
                 messagebox.showinfo("Congrats", f"Black checkmated, White won!")
                 print("Black checkmated, White won!")
@@ -310,12 +308,10 @@ class SjakkSpill:
                 if type(piece) != King:
                     possible_moves = piece.legal_moves(self.tiles)
                     if len(possible_moves) > 0:
-                        # print("has move(s)")
                         break
                 elif type(piece) == King:
                     possible_moves = piece.legal_moves(self.tiles, self.white_attacking_tiles)
                     if len(possible_moves) > 0:
-                        # print("has move(s)")
                         break
 
         if self.turn == "white":
@@ -323,14 +319,11 @@ class SjakkSpill:
                 if type(piece) != King:
                     possible_moves = piece.legal_moves(self.tiles)
                     if len(possible_moves) > 0:
-                        # print("has move(s)")
                         break
                 elif type(piece) == King:
                     possible_moves = piece.legal_moves(self.tiles, self.black_attacking_tiles)
                     if len(possible_moves) > 0:
-                        # print("has move(s)")
                         break
-            # print(len(possible_moves))
         if len(possible_moves) == 0:
             messagebox.showinfo("Draw", f"Stalemate. It's a Draw")
 
@@ -352,8 +345,6 @@ class SjakkSpill:
                     pawn.en_passant = False
         self.update_black_attacking_tiles()
         self.update_white_attacking_tiles()
-        for tile in self.black_attacking_tiles:
-            print(tile)
         self.checked()
         if not self.white_checked and not self.black_checked:
             self.stalemate()
@@ -429,9 +420,7 @@ class SjakkSpill:
                 attacking = piece.tiles_i_could_attack(self.tiles)  # Pawns working :)
             for square in attacking:
                 self.black_attacking_tiles.add(square)
-        #  for q in self.black_attacking_tiles:
-        #    print(q)
-
+                
     def pawn_transforamtion(self, tile):
         y_translation = 100
         x_translation = 50
