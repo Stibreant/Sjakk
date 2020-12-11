@@ -4,12 +4,14 @@ def add_moves(myself, tile, finding_checked_line, checking_defending_pieces, che
         if finding_checked_line:
             if type(tile.piece) == King and tile.piece.colour != myself.colour:
                 return "found"
-        elif checking_defending_pieces and type(tile.piece) == King:
+        elif checking_defending_pieces: # or type(tile.piece) == King:
             legal_moves.add(tile)
+            if type(tile.piece) != King:
+                return "break"
         else:
             if tile.piece.colour != myself.colour:
                 legal_moves.add(tile)
-                return "break"
+            return "break"
         
     elif tile.piece is None:
         legal_moves.add(tile)
@@ -111,10 +113,7 @@ class Pawn:
 
         for element in self.en_passant_allowed(tiles, tile_index):
             legal_moves.add(element)
-        text = "Legal moves are "
-        for move in legal_moves:
-            text += f"{move} "
-        print(text)
+
         return legal_moves
 
     def en_passant_allowed(self, tiles, tile_index):
