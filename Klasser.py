@@ -19,7 +19,7 @@ def add_moves(myself, tile, finding_checked_line, checking_defending_pieces, che
             checked_line.add(tile)
 
 class Tile:
-    def __init__(self, letter, number, xpos, ypos, size, piece=None):
+    def __init__(self, letter, number, xpos, ypos, size, colour, piece=None):
         self.size = size
         self.position = [xpos, ypos]
         self.cordinate = [letter, number]
@@ -27,11 +27,20 @@ class Tile:
         self.avaliavbe_size = 10
         self.avaliable = None
         self.sprite = None
+        self.original_colour = colour
 
-    def draw_tile(self, master, a, b, c, d, e):
-        test = master.board.create_rectangle(a, b, c, d, fill=e)
-        master.board.tag_bind(test, "<Button-1>", lambda event, ass=self: master.clicked(ass))
-        self.sprite = test
+    def draw_tile(self, master, a, b, c, d):
+        temp = master.board.create_rectangle(a, b, c, d, fill=self.get_original_colour())
+        master.board.tag_bind(temp, "<Button-1>", lambda event, ass=self: master.clicked(ass))
+        master.board.tag_bind(temp, "<ButtonRelease-3>", lambda event, ass=self: master.draw_arrow(ass))
+        
+        self.sprite = temp
+
+    def get_original_colour(self):
+        return self.original_colour
+    
+    def set_original_colour(self, colour):
+        self.__original_colour = colour
 
     def got_piece(self, new_piece):
         self.piece = new_piece
@@ -75,6 +84,7 @@ class Pawn:
         self.sprite = sprite
         self.en_passant = False
         self.pinned = False
+        self.value = 1
 
     def update_tile(self):
         self.tile.got_piece(self)
@@ -199,6 +209,7 @@ class Rook:
         self.colour = colour
         self.sprite = sprite
         self.pinned = False
+        self.value = 5
 
     def legal_moves(self, tiles, checking_defending_pieces=False, finding_checked_line=False):
         if self.tile is None:
@@ -268,6 +279,7 @@ class Bishop:
         self.colour = colour
         self.sprite = sprite
         self.pinned = False
+        self.value = 3
 
     def update_piece_and_tile(self, new_tile, transforming=False):
         if not transforming:
@@ -341,6 +353,7 @@ class Queen:
         self.colour = colour
         self.sprite = sprite
         self.pinned = False
+        self.value = 9
 
     def update_piece_and_tile(self, new_tile, transforming=False):
         if not transforming:
@@ -449,6 +462,7 @@ class Knight:
         self.colour = colour
         self.sprite = sprite
         self.pinned = False
+        self.value = 3
 
     def update_piece_and_tile(self, new_tile, transforming=False):
         if not transforming:
@@ -515,6 +529,7 @@ class King:
         self.colour = colour
         self.sprite = sprite
         self.blocking_pieces = []
+        self.value = 900
 
     def update_piece_and_tile(self, new_tile, transforming=False):
         if not transforming:

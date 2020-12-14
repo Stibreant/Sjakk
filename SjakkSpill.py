@@ -6,13 +6,14 @@ from Klasser import Tile, Rook, Bishop, Knight, King, Pawn, Queen
 # DONE Mangler: Brikker kan ikke flyttes hvis kongen kommer i sjakk
 # TODO Timer
 # TODO Show taken pieces better, add points
-# TODO Allow user to draw arrows
+# DONE Allow user to draw arrows
+    # TODO Arrow blocks users
 
 class SjakkSpill:
     def __init__(self):
         self.master = tkinter.Tk()
         self.master.title("Chess")
-        self.width = 1280  # 1280 2736/2 2560
+        self.width = 1280 # 1280 2736/2 2560
         self.height = 720  # 720  # 1824/2 1440
         self.board = tkinter.Canvas(self.master, width=self.width, height=self.height)
         self.board.pack()
@@ -26,11 +27,13 @@ class SjakkSpill:
         self.white_pieces = set()
         self.black_attacking_tiles = set()
         self.black_pieces = set()
+        self.canvas_items = []
 
         self.square_starty = self.height*0.15
         self.square_startx = self.width*0.3
         self.square_size = self.width*0.05
         self.make_board()
+        self.board.addtag_all("tile")
 
         img = Image.open("pieces/white_pawn.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
@@ -41,7 +44,7 @@ class SjakkSpill:
         self.black_pawn = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
         self.pawns = []
-        self.make_pawns()
+        #self.make_pawns()
 
         img = Image.open("pieces/white_rook.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
@@ -52,7 +55,7 @@ class SjakkSpill:
         self.black_rook = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
         self.rooks = []
-        self.make_rooks()
+        #self.make_rooks()
 
         img = Image.open("pieces/white_knight.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
@@ -63,7 +66,7 @@ class SjakkSpill:
         self.black_knight = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
         self.knights = []
-        self.make_knights()
+        #self.make_knights()
 
         img = Image.open("pieces/white_bishop.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
@@ -74,7 +77,7 @@ class SjakkSpill:
         self.black_bishop = ImageTk.PhotoImage(img)  # convert to PhotoImage
 
         self.bishops = []
-        self.make_bishops()
+        #self.make_bishops()
 
         img = Image.open("pieces/white_queen.png")  # PIL solution
         img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
@@ -97,6 +100,17 @@ class SjakkSpill:
 
         self.kings = []
         self.make_kings()
+
+        # Makes counters:
+        self.white_counter = self.board.create_text(self.width/2,self.height*9/10,fill="black",font="Times 20 bold",
+                        text="")
+        self. black_counter = self.board.create_text(self.width/2,self.height/10,fill="black",font="Times 20 bold",
+                        text="")
+
+        self.arrows = []
+        self.highlighted_tiles = []
+
+        
 
         self.white_pieces_taken = 0
         self.black_pieces_taken = 0
@@ -121,10 +135,11 @@ class SjakkSpill:
                     else:
                         if self.white_checked or self.black_checked:
                             if len(self.checking_piece) == 1:
-                                if type(self.checking_piece) != Knight:
+                                if type(self.checking_piece[0]) != Knight:
                                     stop_check_moves = self.checking_piece[0].legal_moves(self.tiles, False, True)
                                 else:
                                     stop_check_moves = set()
+
                                 stop_check_moves.add(self.checking_piece[0].tile)
                                 stop_check_moves = stop_check_moves.intersection(tile.piece.legal_moves(self.tiles))
                                 self.display_legal_moves(stop_check_moves)
@@ -193,6 +208,7 @@ class SjakkSpill:
             self.enable_en_passant(tile)
             self.previous_clicked_tile.piece.update_piece_and_tile(tile)
             self.board.tag_bind(tile.piece.sprite, "<Button-1>", lambda event, a=tile: self.clicked(a))
+            self.board.tag_bind(tile.piece.sprite, "<ButtonRelease-3>", lambda event, ass=tile: self.draw_arrow(ass))
             if type(tile.piece) == King and tile.piece.first_move:
                 if (tile == self.tiles[16]) or (tile == self.tiles[48]) or (tile == self.tiles[55]) or (tile == self.tiles[23]):
                     self.castling(tile)
@@ -218,6 +234,7 @@ class SjakkSpill:
         for king in self.kings:
             if king.colour == "white":
                 if king.tile in self.black_attacking_tiles:
+                    self.highlight_tile(king.tile, "#D11")
                     self.white_checked = True
                     for p in self.black_pieces:
                         if type(p) is not King:
@@ -227,12 +244,15 @@ class SjakkSpill:
                     print("White in check")
                     break
                 else:
+                    self.highlight_tile(king.tile)
+                    self.reset_tiles()
                     self.white_checked = False
                     self.checking_piece = []
                     print("white not in check")
 
             elif king.colour == "black":
                 if king.tile in self.white_attacking_tiles:
+                    self.highlight_tile(king.tile, "#D11")
                     self.black_checked = True
                     for p in self.white_pieces:
                         if type(p) is not King:
@@ -242,6 +262,8 @@ class SjakkSpill:
                     print("black in check")
                     break
                 else:
+                    self.highlight_tile(king.tile)
+                    self.reset_tiles()
                     self.black_checked = False
                     self.checking_piece = []
                     print("black not in check")
@@ -309,6 +331,8 @@ class SjakkSpill:
             messagebox.showinfo("Draw", f"Stalemate. It's a Draw")
 
     def update_turn(self):
+        self.remove_highlighiting()
+        self.update_counter()
         if self.turn == "white":
             self.turn = "black"
             self.can_piece_move_discovered_check()
@@ -330,6 +354,29 @@ class SjakkSpill:
         if not self.white_checked and not self.black_checked:
             self.stalemate()
 
+    def update_counter(self):
+        white_value = 0
+        black_value = 0
+        for piece in self.white_pieces:
+            white_value += piece.value
+        for piece in self.black_pieces:
+            black_value += piece.value
+        total_value = white_value - black_value
+        
+        if total_value > 0:
+            self.board.itemconfig(self.white_counter,text=f"+{total_value}")
+            self.board.itemconfig(self.black_counter,text="")
+
+        elif total_value == 0:
+            self.board.itemconfig(self.white_counter,text="")
+            self.board.itemconfig(self.black_counter,text="")
+
+        elif total_value < 0:
+            self.board.itemconfig(self.white_counter,text="")
+            self.board.itemconfig(self.black_counter,text=f"+{-total_value}")
+        
+        
+
     def enable_en_passant(self, tile):
         if type(self.previous_clicked_tile.piece) == Pawn:
             if abs(self.previous_clicked_tile.cordinate[1] - tile.cordinate[1]) == 2:
@@ -341,12 +388,14 @@ class SjakkSpill:
             player_closest_tile = self.tiles[7]
             self.board.coords(piece.sprite, player_closest_tile.position[0] + self.white_pieces_taken*self.width*x_translation, player_closest_tile.position[1] + self.height*0.1)
             self.white_pieces_taken += 1
+            self.black_pieces.remove(piece)
             piece.tile = None
 
         elif piece.colour == "white":
             player_closest_tile = self.tiles[0]
             self.board.coords(piece.sprite, player_closest_tile.position[0] + self.black_pieces_taken*self.width*x_translation, player_closest_tile.position[1] - self.height*0.1)
             self.black_pieces_taken += 1
+            self.white_pieces.remove(piece)
             piece.tile = None
 
     def took_piece_with_en_passant(self, tile):
@@ -491,11 +540,85 @@ class SjakkSpill:
                 else:
                     colour = "#DDD"
 
-                tile = Tile(x, y, self.square_startx + x*self.square_size, self.square_starty + y*self.square_size, self.square_size)
+                tile = Tile(x, y, self.square_startx + x*self.square_size, self.square_starty + y*self.square_size, self.square_size, colour)
                 tile.draw_tile(self, self.square_startx + x*self.square_size, self.square_starty + y*self.square_size,
-                               self.square_startx + self.square_size*(1 + x), self.square_starty + self.square_size*(1 + y), colour)
+                               self.square_startx + self.square_size*(1 + x), self.square_starty + self.square_size*(1 + y))
                 self.tiles.append(tile)
+                self.canvas_items.append(tile)
                 i += 1
+    
+# highlight_tile highlights tile with specified colour, if no colour is sent it resets to original colour
+    def highlight_tile(self, tile, colour=None):
+        if "1" == "1":
+            if colour == None:
+                colour = tile.get_original_colour()
+            self.board.itemconfig(tile.sprite, fill=colour) #tile.original_colour
+
+# reset_tiles resets tile to origianl colour
+    def reset_tiles(self):
+        for tile in self.tiles:
+            self.highlight_tile(tile, tile.original_colour)
+
+# draw_arrow Draws arrow from tile to tile. (WIP)
+    def draw_arrow(self, tile):
+        #print(tile)
+        x = self.board.winfo_pointerx()
+        y = self.board.winfo_pointery()
+        abs_coord_x = self.board.winfo_pointerx() - self.board.winfo_rootx()
+        abs_coord_y = self.board.winfo_pointery() - self.board.winfo_rooty()
+        closest = self.board.find_closest(abs_coord_x,abs_coord_y,None, 64)[0]
+
+        if len(self.canvas_items) < closest:
+            new_tile = None
+
+        else:
+            print(self.canvas_items[closest-1])
+            # if tile
+            if type(self.canvas_items[closest-1]) == Tile:
+                new_tile = self.tiles[closest-1]
+
+            # if object is piece
+            elif type(self.canvas_items[closest-1]) == King or type(self.canvas_items[closest-1]) == Knight \
+            or type(self.canvas_items[closest-1]) == Queen or type(self.canvas_items[closest-1]) == Bishop \
+            or type(self.canvas_items[closest-1]) == Pawn or type(self.canvas_items[closest-1]) == Rook:
+
+                new_tile = self.canvas_items[closest-1].tile
+
+            temp=False
+            index = 0
+            for indx, arrow in enumerate(self.arrows):
+                if tile == arrow[1] and new_tile == arrow[2]:
+                    temp = True
+                    index = indx
+                    break
+            if temp: 
+                print(f"same arrow, {self.arrows[index][1]} from to {self.arrows[index][2]}")
+                self.board.delete(arrow[0])
+                self.arrows.pop(index)
+                return
+
+        if new_tile is not None:
+            if new_tile == tile:
+                if tile in self.highlighted_tiles:
+                    self.highlighted_tiles.remove(tile)
+                    self.highlight_tile(tile)
+
+                else:
+                    self.highlighted_tiles.append(tile)
+                    self.highlight_tile(tile, "green")
+            else:
+                self.arrows.append((self.board.create_line(tile.position[0]+tile.size/2, tile.position[1]+tile.size/2, new_tile.position[0]+tile.size/2, new_tile.position[1]+tile.size/2, arrow=tkinter.LAST, width=self.height/111, fill="magenta"), tile, new_tile))
+
+        
+    def remove_highlighiting(self):
+        for arrow in self.arrows:
+            self.board.delete(arrow[0])
+        self.arrows = []
+
+        for tile in self.highlighted_tiles:
+            self.highlight_tile(tile)
+        self.highlighted_tiles = []
+
 
     def make_pawns(self):
         for tile in self.tiles:
@@ -503,15 +626,19 @@ class SjakkSpill:
                 sprite = self.board.create_image(tile.position[0]+4, tile.position[1]+5, anchor=tkinter.NW, image=self.black_pawn)
                 pawn = Pawn(tile, "black", sprite)
                 self.board.tag_bind(pawn.sprite, "<Button-1>", lambda event, a=pawn.tile: self.clicked(a))
+                self.board.tag_bind(pawn.sprite, "<ButtonRelease-3>", lambda event, ass=pawn.tile: self.draw_arrow(ass))
                 self.pawns.append(pawn)
                 self.black_pieces.add(pawn)
+                self.canvas_items.append(pawn)
 
             elif tile.cordinate[1] == 6:
                 sprite = self.board.create_image(tile.position[0]+4, tile.position[1]+5, anchor=tkinter.NW, image=self.white_pawn)
                 pawn = Pawn(tile, "white", sprite)
                 self.board.tag_bind(pawn.sprite, "<Button-1>", lambda event, a=pawn.tile: self.clicked(a))
+                self.board.tag_bind(pawn.sprite, "<ButtonRelease-3>", lambda event, ass=pawn.tile: self.draw_arrow(ass))
                 self.pawns.append(pawn)
                 self.white_pieces.add(pawn)
+                self.canvas_items.append(pawn)
 
     def make_rooks(self):
         for tile in self.tiles:
@@ -519,14 +646,19 @@ class SjakkSpill:
                 sprite = self.board.create_image(tile.position[0]+4, tile.position[1]+5, anchor=tkinter.NW, image=self.white_rook)
                 rook = Rook(tile, "white", sprite)
                 self.board.tag_bind(rook.sprite, "<Button-1>", lambda event, a=rook.tile: self.clicked(a))
+                self.board.tag_bind(rook.sprite, "<ButtonRelease-3>", lambda event, ass=rook.tile: self.draw_arrow(ass))
                 self.rooks.append(rook)
                 self.white_pieces.add(rook)
+                self.canvas_items.append(rook)
+
             elif tile.cordinate[1] == 0 and (tile.cordinate[0] == 0 or tile.cordinate[0] == 7):
                 sprite = self.board.create_image(tile.position[0]+4, tile.position[1]+5, anchor=tkinter.NW, image=self.black_rook)
                 rook = Rook(tile, "black", sprite)
                 self.board.tag_bind(rook.sprite, "<Button-1>", lambda event, a=rook.tile: self.clicked(a))
+                self.board.tag_bind(rook.sprite, "<ButtonRelease-3>", lambda event, ass=rook.tile: self.draw_arrow(ass))
                 self.rooks.append(rook)
                 self.black_pieces.add(rook)
+                self.canvas_items.append(rook)
 
     def make_knights(self):
         for tile in self.tiles:
@@ -534,15 +666,19 @@ class SjakkSpill:
                 sprite = self.board.create_image(tile.position[0]+4, tile.position[1]+5, anchor=tkinter.NW, image=self.white_knight)
                 knight = Knight(tile, "white", sprite)
                 self.board.tag_bind(knight.sprite, "<Button-1>", lambda event, a=knight.tile: self.clicked(a))
+                self.board.tag_bind(knight.sprite, "<ButtonRelease-3>", lambda event, ass=knight.tile: self.draw_arrow(ass))
                 self.knights.append(knight)
                 self.white_pieces.add(knight)
+                self.canvas_items.append(knight)
 
             elif tile.cordinate[1] == 0 and (tile.cordinate[0] == 1 or tile.cordinate[0] == 6):
                 sprite = self.board.create_image(tile.position[0]+4, tile.position[1]+5, anchor=tkinter.NW, image=self.black_knight)
                 knight = Knight(tile, "black", sprite)
                 self.board.tag_bind(knight.sprite, "<Button-1>", lambda event, a=knight.tile: self.clicked(a))
+                self.board.tag_bind(knight.sprite, "<ButtonRelease-3>", lambda event, ass=knight.tile: self.draw_arrow(ass))
                 self.knights.append(knight)
                 self.black_pieces.add(knight)
+                self.canvas_items.append(knight)
 
     def make_bishops(self):
         for tile in self.tiles:
@@ -550,14 +686,19 @@ class SjakkSpill:
                 sprite = self.board.create_image(tile.position[0]+4, tile.position[1]+5, anchor=tkinter.NW, image=self.white_bishop)
                 bishop = Bishop(tile, "white", sprite)
                 self.board.tag_bind(bishop.sprite, "<Button-1>", lambda event, a=bishop.tile: self.clicked(a))
+                self.board.tag_bind(bishop.sprite, "<ButtonRelease-3>", lambda event, ass=bishop.tile: self.draw_arrow(ass))
                 self.bishops.append(bishop)
                 self.white_pieces.add(bishop)
+                self.canvas_items.append(bishop)
+
             elif tile.cordinate[1] == 0 and (tile.cordinate[0] == 2 or tile.cordinate[0] == 5):
                 sprite = self.board.create_image(tile.position[0]+4, tile.position[1]+5, anchor=tkinter.NW, image=self.black_bishop)
                 bishop = Bishop(tile, "black", sprite)
                 self.board.tag_bind(bishop.sprite, "<Button-1>", lambda event, a=bishop.tile: self.clicked(a))
+                self.board.tag_bind(bishop.sprite, "<ButtonRelease-3>", lambda event, ass=bishop.tile: self.draw_arrow(ass))
                 self.bishops.append(bishop)
                 self.black_pieces.add(bishop)
+                self.canvas_items.append(bishop)
 
     def make_queens(self):
         for tile in self.tiles:
@@ -565,14 +706,19 @@ class SjakkSpill:
                 sprite = self.board.create_image(tile.position[0]+4, tile.position[1]+5, anchor=tkinter.NW, image=self.white_queen)
                 queen = Queen(tile, "white", sprite)
                 self.board.tag_bind(queen.sprite, "<Button-1>", lambda event, a=queen.tile: self.clicked(a))
+                self.board.tag_bind(queen.sprite, "<ButtonRelease-3>", lambda event, ass=queen.tile: self.draw_arrow(ass))
                 self.queens.append(queen)
                 self.white_pieces.add(queen)
+                self.canvas_items.append(queen)
+
             elif tile.cordinate[1] == 0 and tile.cordinate[0] == 3:
                 sprite = self.board.create_image(tile.position[0]+4, tile.position[1]+5, anchor=tkinter.NW, image=self.black_queen)
                 queen = Queen(tile, "black", sprite)
                 self.board.tag_bind(queen.sprite, "<Button-1>", lambda event, a=queen.tile: self.clicked(a))
+                self.board.tag_bind(queen.sprite, "<ButtonRelease-3>", lambda event, ass=queen.tile: self.draw_arrow(ass))
                 self.queens.append(queen)
                 self.black_pieces.add(queen)
+                self.canvas_items.append(queen)
 
     def make_kings(self):
         for tile in self.tiles:
@@ -580,14 +726,19 @@ class SjakkSpill:
                 sprite = self.board.create_image(tile.position[0]+4, tile.position[1]+5, anchor=tkinter.NW, image=self.white_king)
                 king = King(tile, "white", sprite)
                 self.board.tag_bind(king.sprite, "<Button-1>", lambda event, a=king.tile: self.clicked(a))
+                self.board.tag_bind(king.sprite, "<ButtonRelease-3>", lambda event, ass=king.tile: self.draw_arrow(ass))
                 self.kings.append(king)
                 self.white_pieces.add(king)
+                self.canvas_items.append(king)
+
             elif tile.cordinate[1] == 0 and tile.cordinate[0] == 4:
                 sprite = self.board.create_image(tile.position[0]+4, tile.position[1]+5, anchor=tkinter.NW, image=self.black_king)
                 king = King(tile, "black", sprite)
                 self.board.tag_bind(king.sprite, "<Button-1>", lambda event, a=king.tile: self.clicked(a))
+                self.board.tag_bind(king.sprite, "<ButtonRelease-3>", lambda event, ass=king.tile: self.draw_arrow(ass))
                 self.kings.append(king)
                 self.black_pieces.add(king)
+                self.canvas_items.append(king)
 
 
 if __name__ == '__main__':
