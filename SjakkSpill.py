@@ -8,6 +8,9 @@ from Klasser import Tile, Rook, Bishop, Knight, King, Pawn, Queen
 # TODO Show taken pieces better, add points
 # DONE Allow user to draw arrows
     # TODO Arrow blocks users
+# DONE pieces can xray through king.
+# TODO Transforming a pawn may break insufficient material...
+# TODO Resetting ruins arrows. Only the end-point
 
 class SjakkSpill:
     def __init__(self):
@@ -34,84 +37,21 @@ class SjakkSpill:
         self.square_size = self.width*0.05
         self.make_board()
         self.board.addtag_all("tile")
+       
+        self.initialize_images()
+        self.make_pieces()
 
-        img = Image.open("pieces/white_pawn.png")  # PIL solution
-        img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
-        self.white_pawn = ImageTk.PhotoImage(img)  # convert to PhotoImage
-
-        img = Image.open("pieces/black_pawn.png")  # PIL solution
-        img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
-        self.black_pawn = ImageTk.PhotoImage(img)  # convert to PhotoImage
-
-        self.pawns = []
-        #self.make_pawns()
-
-        img = Image.open("pieces/white_rook.png")  # PIL solution
-        img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
-        self.white_rook = ImageTk.PhotoImage(img)  # convert to PhotoImage
-
-        img = Image.open("pieces/black_rook.png")  # PIL solution
-        img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
-        self.black_rook = ImageTk.PhotoImage(img)  # convert to PhotoImage
-
-        self.rooks = []
-        #self.make_rooks()
-
-        img = Image.open("pieces/white_knight.png")  # PIL solution
-        img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
-        self.white_knight = ImageTk.PhotoImage(img)  # convert to PhotoImage
-
-        img = Image.open("pieces/black_knight.png")  # PIL solution
-        img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
-        self.black_knight = ImageTk.PhotoImage(img)  # convert to PhotoImage
-
-        self.knights = []
-        #self.make_knights()
-
-        img = Image.open("pieces/white_bishop.png")  # PIL solution
-        img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
-        self.white_bishop = ImageTk.PhotoImage(img)  # convert to PhotoImage
-
-        img = Image.open("pieces/black_bishop.png")  # PIL solution
-        img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
-        self.black_bishop = ImageTk.PhotoImage(img)  # convert to PhotoImage
-
-        self.bishops = []
-        #self.make_bishops()
-
-        img = Image.open("pieces/white_queen.png")  # PIL solution
-        img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
-        self.white_queen = ImageTk.PhotoImage(img)  # convert to PhotoImage
-
-        img = Image.open("pieces/black_queen.png")  # PIL solution
-        img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
-        self.black_queen = ImageTk.PhotoImage(img)  # convert to PhotoImage
-
-        self.queens = []
-        self.make_queens()
-
-        img = Image.open("pieces/white_king.png")  # PIL solution
-        img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
-        self.white_king = ImageTk.PhotoImage(img)  # convert to PhotoImage
-
-        img = Image.open("pieces/black_king.png")  # PIL solution
-        img = img.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
-        self.black_king = ImageTk.PhotoImage(img)  # convert to PhotoImage
-
-        self.kings = []
-        self.make_kings()
-
-        # Makes counters:
-        self.white_counter = self.board.create_text(self.width/2,self.height*9/10,fill="black",font="Times 20 bold",
+        # Piece Count:
+        self.white_counter = self.board.create_text(self.width/2, self.height*9/10, fill="black", font="Times 20 bold",
                         text="")
-        self. black_counter = self.board.create_text(self.width/2,self.height/10,fill="black",font="Times 20 bold",
+        self. black_counter = self.board.create_text(self.width/2, self.height/10, fill="black", font="Times 20 bold",
                         text="")
 
         self.arrows = []
         self.highlighted_tiles = []
 
-        
-
+        self.taken_pieces = []
+        self.taken_piecesDifference = []
         self.white_pieces_taken = 0
         self.black_pieces_taken = 0
         self.white_checked = False
@@ -124,7 +64,95 @@ class SjakkSpill:
         self.avaliable_dots = []
         self.avaliable_tiles = []
 
+        self.won = None
+
+        self.turn_text = self.board.create_text(self.width*0.9, self.height*5/10, fill="black", font="Times 20 bold",
+                        text="Turn: white")
+
+        # Wins Count:
+        self.white_points_text = self.board.create_text(self.width*0.1, self.height*6/10, fill="black", font="Times 20 bold",
+                        text="White: \t 0")
+        self. black_points_text = self.board.create_text(self.width*0.1, self.height*4/10, fill="black", font="Times 20 bold",
+                        text="Black: \t 0")
+        self.white_points = 0
+        self.black_points = 0
+
+        self.resetButton = tkinter.Button(self.master, text="Reset Board", command=self.reset)
+        self.resetButton.pack()
+
+        self.resignButton = tkinter.Button(self.master, text="Resign", command=self.resign)
+        self.resignButton.pack()
+
+        self.drawButton = tkinter.Button(self.master, text="Draw", command=self.offer_draw)
+        self.drawButton.pack()
+
         tkinter.mainloop()
+
+    def make_pieces(self):
+        self.pawns = []
+        self.make_pawns()
+
+        self.rooks = []
+        self.make_rooks()
+
+        self.knights = []
+        self.make_knights()
+
+        self.bishops = []
+        self.make_bishops()
+
+        self.queens = []
+        self.make_queens()
+
+        self.kings = []
+        self.make_kings()
+
+    def delete_pieces(self, piece=None):
+        if piece != None:
+            pass
+        else:
+            for piece in self.taken_pieces:
+                self.board.delete(piece.sprite)
+            self.taken_pieces = []
+            for piece in self.white_pieces:
+                self.board.delete(piece.sprite)
+            self.white_pieces = set()
+            for piece in self.black_pieces:
+                self.board.delete(piece.sprite)
+            self.black_pieces = set()
+            for tile in self.tiles:
+                tile.piece = None
+
+    def offer_draw(self):
+        MsgBox = tkinter.messagebox.askquestion (f'{self.turn} offered a draw','Do you want to accept?')
+        if MsgBox == "yes":
+            messagebox.showinfo("Draw", f"Draw accepted")
+            self.turn = None
+            self.white_points += 0.5
+            self.board.itemconfig(self.white_points_text,text=f"White: \t {self.white_points}")
+            self.black_points += 0.5
+            self.board.itemconfig(self.black_points_text,text=f"Black: \t {self.black_points}")
+        if MsgBox == "no":
+            return
+
+    def reset(self):
+        self.reset_tiles()
+        self.remove_legal_moves()
+        self.delete_pieces()
+        self.make_pieces()
+        # Cheeky
+        self.turn = "black"
+        self.update_turn()
+
+    def resign(self):
+        if self.turn == "white":
+            messagebox.showinfo("Congrats", f"White resigned, Black won!")
+            self.black_points += 1
+            self.board.itemconfig(self.black_points_text,text=f"Black: \t {self.black_points}")
+        else:
+            messagebox.showinfo("Congrats", f"Black resigned, White won!")
+            self.white_points += 1
+            self.board.itemconfig(self.white_points_text,text=f"White: \t {self.white_points}")
 
     def find_legal_moves(self, tile):
         if tile.piece is not None and self.turn == tile.piece.colour:  # if piece show moves for piece
@@ -284,8 +312,12 @@ class SjakkSpill:
                     for move in stop_check_moves:
                         possible_moves.add(move)
             if len(possible_moves) == 0:
+                self.turn = None
                 messagebox.showinfo("Congrats", f"White checkmated, Black won!")
                 print("White checkmated, Black won!")
+                self.black_points += 1
+                self.board.itemconfig(self.black_points_text,text=f"Black: \t {self.black_points}")
+
 
         if self.black_checked:
             for piece in self.black_pieces:
@@ -301,8 +333,11 @@ class SjakkSpill:
                     for move in stop_check_moves:
                         possible_moves.add(move)
             if len(possible_moves) == 0:
+                self.turn = None
                 messagebox.showinfo("Congrats", f"Black checkmated, White won!")
                 print("Black checkmated, White won!")
+                self.white_points += 1
+                self.board.itemconfig(self.white_points_text,text=f"White: \t {self.white_points}")
 
     def stalemate(self):
         possible_moves = set()
@@ -328,11 +363,17 @@ class SjakkSpill:
                     if len(possible_moves) > 0:
                         break
         if len(possible_moves) == 0:
+            self.turn = None
             messagebox.showinfo("Draw", f"Stalemate. It's a Draw")
+            self.white_points += 0.5
+            self.board.itemconfig(self.white_points_text,text=f"White: \t {self.white_points}")
+            self.black_points += 0.5
+            self.board.itemconfig(self.black_points_text,text=f"Black: \t {self.black_points}")
+
 
     def update_turn(self):
-        self.remove_highlighiting()
         self.update_counter()
+        self.remove_highlighiting()
         if self.turn == "white":
             self.turn = "black"
             self.can_piece_move_discovered_check()
@@ -353,6 +394,8 @@ class SjakkSpill:
         self.checked()
         if not self.white_checked and not self.black_checked:
             self.stalemate()
+        self.insufficient_material()
+        self.board.itemconfig(self.turn_text,text=f"Turn: {self.turn}")
 
     def update_counter(self):
         white_value = 0
@@ -385,18 +428,34 @@ class SjakkSpill:
     def remove_piece(self, tile, piece):
         x_translation = 0.02
         if piece.colour == "black":
-            player_closest_tile = self.tiles[7]
-            self.board.coords(piece.sprite, player_closest_tile.position[0] + self.white_pieces_taken*self.width*x_translation, player_closest_tile.position[1] + self.height*0.1)
-            self.white_pieces_taken += 1
-            self.black_pieces.remove(piece)
-            piece.tile = None
+                player_closest_tile = self.tiles[7]
+                self.board.coords(piece.sprite, player_closest_tile.position[0] + self.white_pieces_taken*self.width*x_translation, player_closest_tile.position[1] + self.height*0.1)
+                self.white_pieces_taken += 1
+                self.taken_pieces.append(piece)
+                self.taken_piecesDifference.append(piece)
+                self.black_pieces.remove(piece)
+                piece.tile = None
 
         elif piece.colour == "white":
             player_closest_tile = self.tiles[0]
             self.board.coords(piece.sprite, player_closest_tile.position[0] + self.black_pieces_taken*self.width*x_translation, player_closest_tile.position[1] - self.height*0.1)
             self.black_pieces_taken += 1
+            self.taken_pieces.append(piece)
+            self.taken_piecesDifference.append(piece)
             self.white_pieces.remove(piece)
             piece.tile = None
+        
+        # remove similar pieces from "Captured pieces"
+        found = False
+        for p in self.taken_piecesDifference:
+            if type(p) == type(piece) and p.colour != piece.colour:
+                found_piece = p
+                found = True
+
+        if found:
+            self.board.delete(found_piece.sprite)
+            self.taken_piecesDifference.remove(found_piece)
+            self.board.delete(piece.sprite)
 
     def took_piece_with_en_passant(self, tile):
         if tile.piece is None and type(self.previous_clicked_tile.piece) == Pawn and abs(self.previous_clicked_tile.cordinate[0]-tile.cordinate[0]) == 1:
@@ -561,9 +620,6 @@ class SjakkSpill:
 
 # draw_arrow Draws arrow from tile to tile. (WIP)
     def draw_arrow(self, tile):
-        #print(tile)
-        x = self.board.winfo_pointerx()
-        y = self.board.winfo_pointery()
         abs_coord_x = self.board.winfo_pointerx() - self.board.winfo_rootx()
         abs_coord_y = self.board.winfo_pointery() - self.board.winfo_rooty()
         closest = self.board.find_closest(abs_coord_x,abs_coord_y,None, 64)[0]
@@ -618,6 +674,37 @@ class SjakkSpill:
         for tile in self.highlighted_tiles:
             self.highlight_tile(tile)
         self.highlighted_tiles = []
+
+    def insufficient_material(self):
+        if len(self.pawns) or len(self.queens) or len(self.rooks) > 0:
+            return
+
+        number_pieces = len(self.white_pieces) + len(self.black_pieces)
+        if number_pieces > 4:
+            return
+        
+        # Same coloured bishops
+        elif number_pieces == 4:
+            temp_bishop = None
+            for piece in self.black_pieces:
+                if type(piece) == Bishop:
+                    if temp_bishop == None:
+                        temp_bishop = piece
+
+            for piece in self.white_pieces:
+                if type(piece) == Bishop:
+                    if temp_bishop == None:
+                        temp_bishop = piece
+                    else:
+                        if temp_bishop.tile.get_original_colour() != piece.tile.get_original_colour():
+                            return
+            
+        self.turn = None
+        messagebox.showinfo("Draw", f"Insufficient Material")
+        self.white_points += 0.5
+        self.board.itemconfig(self.white_points_text,text=f"White: \t {self.white_points}")
+        self.black_points += 0.5
+        self.board.itemconfig(self.black_points_text,text=f"Black: \t {self.black_points}")
 
 
     def make_pawns(self):
@@ -739,6 +826,60 @@ class SjakkSpill:
                 self.kings.append(king)
                 self.black_pieces.add(king)
                 self.canvas_items.append(king)
+
+    def initialize_images(self):
+        img_whitePawn = Image.open("pieces/white_pawn.png")  # PIL solution
+        img_whitePawn = img_whitePawn.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
+        self.white_pawn = ImageTk.PhotoImage(img_whitePawn)  # convert to PhotoImage
+
+        img_blackPawn = Image.open("pieces/black_pawn.png")  # PIL solution
+        img_blackPawn = img_blackPawn.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
+        self.black_pawn = ImageTk.PhotoImage(img_blackPawn)  # convert to PhotoImage
+
+
+        img_whiteRook = Image.open("pieces/white_rook.png")  # PIL solution
+        img_whiteRook = img_whiteRook.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
+        self.white_rook = ImageTk.PhotoImage(img_whiteRook)  # convert to PhotoImage
+
+        img_blackRook = Image.open("pieces/black_rook.png")  # PIL solution
+        img_blackRook = img_blackRook.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
+        self.black_rook = ImageTk.PhotoImage(img_blackRook)  # convert to PhotoImage
+
+
+        img_whiteKnight = Image.open("pieces/white_knight.png")  # PIL solution
+        img_whiteKnight = img_whiteKnight.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
+        self.white_knight = ImageTk.PhotoImage(img_whiteKnight)  # convert to PhotoImage
+
+        img_blackKnight = Image.open("pieces/black_knight.png")  # PIL solution
+        img_blackKnight = img_blackKnight.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
+        self.black_knight = ImageTk.PhotoImage(img_blackKnight)  # convert to PhotoImage
+
+
+        img_whiteBishop = Image.open("pieces/white_bishop.png")  # PIL solution
+        img_whiteBishop = img_whiteBishop.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
+        self.white_bishop = ImageTk.PhotoImage(img_whiteBishop)  # convert to PhotoImage
+
+        img_blackBishop = Image.open("pieces/black_bishop.png")  # PIL solution
+        img_blackBishop = img_blackBishop.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
+        self.black_bishop = ImageTk.PhotoImage(img_blackBishop)  # convert to PhotoImage
+
+
+        img_whiteQueen = Image.open("pieces/white_queen.png")  # PIL solution
+        img_whiteQueen = img_whiteQueen.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
+        self.white_queen = ImageTk.PhotoImage(img_whiteQueen)  # convert to PhotoImage
+
+        img_blackQueen = Image.open("pieces/black_queen.png")  # PIL solution
+        img_blackQueen = img_blackQueen.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
+        self.black_queen = ImageTk.PhotoImage(img_blackQueen)  # convert to PhotoImage
+
+
+        img_whiteKing = Image.open("pieces/white_king.png")  # PIL solution
+        img_whiteKing = img_whiteKing.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
+        self.white_king = ImageTk.PhotoImage(img_whiteKing)  # convert to PhotoImage
+
+        img_blackKing = Image.open("pieces/black_king.png")  # PIL solution
+        img_blackKing = img_blackKing.resize((int(self.tiles[0].size*0.9), int(self.tiles[0].size*0.9)), Image.ANTIALIAS)  # The (250, 250) is (height, width)
+        self.black_king = ImageTk.PhotoImage(img_blackKing)  # convert to PhotoImage
 
 
 if __name__ == '__main__':
