@@ -2,6 +2,7 @@ import tkinter
 from tkinter import messagebox
 from PIL import ImageTk, Image
 from Klasser import Tile, Rook, Bishop, Knight, King, Pawn, Queen
+from bot import Bot
 
 # DONE Mangler: Brikker kan ikke flyttes hvis kongen kommer i sjakk
 # TODO Timer
@@ -65,6 +66,7 @@ class SjakkSpill:
         self.avaliable_tiles = []
 
         self.won = None
+        self.bot = None
 
         self.turn_text = self.board.create_text(self.width*0.9, self.height*5/10, fill="black", font="Times 20 bold",
                         text="Turn: white")
@@ -85,6 +87,12 @@ class SjakkSpill:
 
         self.drawButton = tkinter.Button(self.master, text="Draw", command=self.offer_draw)
         self.drawButton.pack()
+
+        self.playbot = tkinter.Button(self.master, text="Start bot (WIP)", command=self.start_bot)
+        self.playbot.pack()
+
+        self.movebot = tkinter.Button(self.master, text="move bot (WIP)", command=self.bot_move)
+        self.movebot.pack()
 
         tkinter.mainloop()
 
@@ -316,7 +324,10 @@ class SjakkSpill:
                 messagebox.showinfo("Congrats", f"White checkmated, Black won!")
                 print("White checkmated, Black won!")
                 self.black_points += 1
-                self.board.itemconfig(self.black_points_text,text=f"Black: \t {self.black_points}")
+                if self.bot != None:
+                    self.board.itemconfig(self.black_points_text,text=f"Black: \t {self.black_points}")
+                else:
+                    self.board.itemconfig(self.black_points_text,text=f"Black (Bot): {self.black_points}")
 
 
         if self.black_checked:
@@ -396,6 +407,10 @@ class SjakkSpill:
             self.stalemate()
         self.insufficient_material()
         self.board.itemconfig(self.turn_text,text=f"Turn: {self.turn}")
+
+        if self.turn == "black":
+            if self.bot != None:
+                self.bot_move()
 
     def update_counter(self):
         white_value = 0
@@ -705,6 +720,25 @@ class SjakkSpill:
         self.board.itemconfig(self.white_points_text,text=f"White: \t {self.white_points}")
         self.black_points += 0.5
         self.board.itemconfig(self.black_points_text,text=f"Black: \t {self.black_points}")
+
+    def start_bot(self):
+        print("bot started")
+        if self.bot == None:
+            self.bot = Bot(self.black_pieces, 'black')
+            self.board.itemconfig(self.black_points_text,text=f"Black (Bot): {self.black_points}")
+            print(self.bot)
+
+    def bot_move(self):
+        self.bot.pieces = self.black_pieces
+        choosen_move = None
+        while choosen_move == None:
+            piece = self.bot.choose_piece()
+            self.clicked(piece.tile)
+            avaliable_moves = self.avaliable_tiles
+            choosen_move = self.bot.choose_move(avaliable_moves)
+        self.move_piece(choosen_move)
+        self.clicked_tile = False
+        self.remove_legal_moves()     
 
 
     def make_pawns(self):
