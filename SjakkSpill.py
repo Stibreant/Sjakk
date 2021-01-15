@@ -3,6 +3,7 @@ from tkinter import messagebox
 from PIL import ImageTk, Image
 from Klasser import Tile, Rook, Bishop, Knight, King, Pawn, Queen
 from bot import Bot
+import random
 
 # DONE Mangler: Brikker kan ikke flyttes hvis kongen kommer i sjakk
 # TODO Timer
@@ -655,7 +656,7 @@ class SjakkSpill:
 
                 new_tile = self.canvas_items[closest-1].tile
 
-            temp=False
+            temp = False
             index = 0
             for indx, arrow in enumerate(self.arrows):
                 if tile == arrow[1] and new_tile == arrow[2]:
@@ -729,16 +730,59 @@ class SjakkSpill:
             print(self.bot)
 
     def bot_move(self):
-        self.bot.pieces = self.black_pieces
-        choosen_move = None
-        while choosen_move == None:
-            piece = self.bot.choose_piece()
-            self.clicked(piece.tile)
-            avaliable_moves = self.avaliable_tiles
-            choosen_move = self.bot.choose_move(avaliable_moves)
-        self.move_piece(choosen_move)
+        best_move = [None, -900, None]
+        self.bot.pieces = random.sample(self.black_pieces, len(self.black_pieces))
+        
+        for piece in self.bot.pieces:
+            print(f"Moves for {piece}")
+            if type(piece) != King:
+                avaliable_moves = piece.legal_moves(self.tiles)
+            else:
+                avaliable_moves = piece.legal_moves(self.tiles, self.white_attacking_tiles)
+
+            for move in avaliable_moves:
+                print(f"best move {best_move[0]} value:{best_move[1]}")
+                #print(f"Thought about {move}")
+                if move in self.white_attacking_tiles:
+                    #print(f"We may lose piece if {move}")
+                    if move.piece == None:
+                        if -piece.value > best_move[1]:
+                            best_move[0] = move
+                            best_move[1] = -piece.value
+                            best_move[2] = piece
+                    else:
+                        trade_value = self.bot.calculate_trade(piece, move.piece)
+                        print(trade_value)
+                        if trade_value > 0 and trade_value > best_move[1]:
+                            best_move[0] = move
+                            best_move[1] = trade_value
+                            best_move[2] = piece
+                            print("\nGood trade\n")
+
+                else: # Tile undefended
+                    if move.piece == None: 
+                        if 0 > best_move[1]:
+                            best_move[0] = move
+                            best_move[1] = 0
+                            best_move[2] = piece
+                    else:
+                        if move.piece.value > best_move[1]:
+                            best_move[0] = move
+                            best_move[1] = move.piece.value
+                            best_move[2] = piece
+
+        self.clicked(best_move[2].tile)
+        self.move_piece(best_move[0])
+        print(f"bot moved {best_move[2]}\n\n")
         self.clicked_tile = False
-        self.remove_legal_moves()     
+        self.remove_legal_moves()
+
+    def bot_losing_piece(self):
+        for piece in self.black_pieces:
+            if type(piece) != Pawn:
+                if piece.tile in self.white_attacking_tiles and piece.tile not in self.black_attacking_tiles:
+                    return piece
+        return None
 
 
     def make_pawns(self):
