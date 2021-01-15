@@ -163,12 +163,18 @@ class SjakkSpill:
             self.white_points += 1
             self.board.itemconfig(self.white_points_text,text=f"White: \t {self.white_points}")
 
-    def find_legal_moves(self, tile):
+    def find_legal_moves(self, tile, bot = False):
         if tile.piece is not None and self.turn == tile.piece.colour:  # if piece show moves for piece
                     if type(tile.piece) == King and self.turn == "white":
+                        if bot:
+                            return tile.piece.legal_moves(self.tiles, self.black_attacking_tiles, False, self.white_checked)
                         self.display_legal_moves(tile.piece.legal_moves(self.tiles, self.black_attacking_tiles, False, self.white_checked))
+                        
                     elif type(tile.piece) == King and self.turn == "black":
+                        if bot:
+                            return tile.piece.legal_moves(self.tiles, self.white_attacking_tiles, False, self.black_checked)
                         self.display_legal_moves(tile.piece.legal_moves(self.tiles, self.white_attacking_tiles, False, self.black_checked))
+                        
                     else:
                         if self.white_checked or self.black_checked:
                             if len(self.checking_piece) == 1:
@@ -179,7 +185,10 @@ class SjakkSpill:
 
                                 stop_check_moves.add(self.checking_piece[0].tile)
                                 stop_check_moves = stop_check_moves.intersection(tile.piece.legal_moves(self.tiles))
+                                if bot:
+                                    return stop_check_moves
                                 self.display_legal_moves(stop_check_moves)
+                                
                         elif tile.piece.pinned and type(tile.piece) != King:
                             for king in self.kings:
                                 if king.colour == self.turn:
@@ -187,10 +196,16 @@ class SjakkSpill:
                                         if tile.piece == tuppel[0]:
                                             line_for_check = tuppel[2]
                                             moves = line_for_check.intersection(tile.piece.legal_moves(self.tiles))
+                                            if bot:
+                                                return moves
                                             self.display_legal_moves(moves)
-                                            break
+                                            
+                                            
                         else:
+                            if bot:
+                                 return tile.piece.legal_moves(self.tiles)
                             self.display_legal_moves(tile.piece.legal_moves(self.tiles))
+                            
                     self.clicked_tile = True
 
     # clicked will find moves for the piece on that square.
@@ -730,52 +745,54 @@ class SjakkSpill:
             print(self.bot)
 
     def bot_move(self):
-        best_move = [None, -900, None]
+        best_move = [None, None, -900]
+        calculated_moves = [best_move]
         self.bot.pieces = random.sample(self.black_pieces, len(self.black_pieces))
+        tmp_board = self.tiles[:]
+        tmp_white_pieces = self.black_pieces.copy()
+        tmp_black_pieces = self.white_pieces.copy()
+        tmp_white_attacking = self.white_attacking_tiles.copy()
+        tmp_black_attacking = self.black_attacking_tiles.copy()
+        depth = 1
         
         for piece in self.bot.pieces:
             print(f"Moves for {piece}")
-            if type(piece) != King:
-                avaliable_moves = piece.legal_moves(self.tiles)
-            else:
-                avaliable_moves = piece.legal_moves(self.tiles, self.white_attacking_tiles)
+            avaliable_moves = self.find_legal_moves(piece.tile, True)
 
             for move in avaliable_moves:
-                print(f"best move {best_move[0]} value:{best_move[1]}")
-                #print(f"Thought about {move}")
-                if move in self.white_attacking_tiles:
-                    #print(f"We may lose piece if {move}")
+                print(f"best move {best_move[0]} value:{best_move[2]}")
+                
+                if move in self.white_attacking_tiles: # Tile is defended
                     if move.piece == None:
-                        if -piece.value > best_move[1]:
+                        if -piece.value > best_move[2]:
                             best_move[0] = move
-                            best_move[1] = -piece.value
-                            best_move[2] = piece
-                    else:
+                            best_move[1] = piece
+                            best_move[2] = -piece.value
+                    else: # Piece on tile
                         trade_value = self.bot.calculate_trade(piece, move.piece)
                         print(trade_value)
-                        if trade_value > 0 and trade_value > best_move[1]:
+                        if trade_value > 0 and trade_value > best_move[2]:
                             best_move[0] = move
-                            best_move[1] = trade_value
-                            best_move[2] = piece
+                            best_move[1] = piece
+                            best_move[2] = trade_value
                             print("\nGood trade\n")
 
                 else: # Tile undefended
                     if move.piece == None: 
-                        if 0 > best_move[1]:
+                        if 0 > best_move[2]:
+                            best_move[0] = move  
+                            best_move[1] = piece
+                            best_move[2] = 0
+                    else: # Piece on tile
+                        if move.piece.value > best_move[2]:
                             best_move[0] = move
-                            best_move[1] = 0
-                            best_move[2] = piece
-                    else:
-                        if move.piece.value > best_move[1]:
-                            best_move[0] = move
-                            best_move[1] = move.piece.value
-                            best_move[2] = piece
+                            best_move[1] = piece
+                            best_move[2] = move.piece.value
 
-        self.clicked(best_move[2].tile)
+        self.previous_clicked_tile = best_move[1].tile
         self.move_piece(best_move[0])
-        print(f"bot moved {best_move[2]}\n\n")
+        print(f"bot moved {best_move[1]}\n\n")
         self.clicked_tile = False
-        self.remove_legal_moves()
 
     def bot_losing_piece(self):
         for piece in self.black_pieces:
