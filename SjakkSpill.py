@@ -742,7 +742,12 @@ class SjakkSpill:
         if self.bot == None:
             self.bot = Bot(self.black_pieces, 'black')
             self.board.itemconfig(self.black_points_text,text=f"Black (Bot): {self.black_points}")
+            self.playbot.configure(text = "Stop Bot")
             print(self.bot)
+        else:
+            self.bot = None
+            self.board.itemconfig(self.black_points_text,text=f"Black: \t {self.black_points}")
+            self.playbot.configure(text = "Start Bot")
 
     def bot_move(self):
         best_move = [None, None, -900]
@@ -755,14 +760,77 @@ class SjakkSpill:
         tmp_black_attacking = self.black_attacking_tiles.copy()
         depth = 1
         
-        for piece in self.bot.pieces:
+        best_move = self.calculate_move("black")
+            
+            
+
+        self.previous_clicked_tile = best_move[1].tile
+        self.move_piece(best_move[0])
+        print(f"bot moved {best_move[1]}\n\n")
+        self.clicked_tile = False
+
+
+    def new_calculate_move(self, colour, moves=[]):
+        if colour == "white":
+            pieces = self.white_pieces
+            attacked_tiles = self.black_attacking_tiles
+        elif colour == "black":
+            pieces = self.bot.pieces
+            attacked_tiles = self.white_attacking_tiles
+
+        for piece in pieces:
+            print(f"Moves for {piece}")
+            avaliable_moves = self.find_legal_moves(piece.tile, True)
+
+            for move in avaliable_moves:
+                best_move = [None, None, -900]
+                if move in attacked_tiles: # Tile is defended
+                    if move.piece == None:
+                            best_move[0] = move
+                            best_move[1] = piece
+                            best_move[2] = -piece.value
+                            moves.append(best_move)
+                    else: # Piece on tile
+                        trade_value = self.bot.calculate_trade(piece, move.piece)
+                        print(trade_value)
+                        best_move[0] = move
+                        best_move[1] = piece
+                        best_move[2] = trade_value
+                        moves.append(best_move)
+                        print("\nGood trade\n")
+
+                else: # Tile undefended
+                    if move.piece == None: 
+                        best_move[0] = move  
+                        best_move[1] = piece
+                        best_move[2] = 0
+                        moves.append(best_move)
+                    else: # Piece on tile
+                        best_move[0] = move
+                        best_move[1] = piece
+                        best_move[2] = move.piece.value
+                        moves.append(best_move)
+
+        return moves
+
+
+    def calculate_move(self, colour):
+        best_move = [None, None, -900]
+        if colour == "white":
+            pieces = self.white_pieces
+            attacked_tiles = self.black_attacking_tiles
+        elif colour == "black":
+            pieces = self.bot.pieces
+            attacked_tiles = self.white_attacking_tiles
+
+        for piece in pieces:
             print(f"Moves for {piece}")
             avaliable_moves = self.find_legal_moves(piece.tile, True)
 
             for move in avaliable_moves:
                 print(f"best move {best_move[0]} value:{best_move[2]}")
                 
-                if move in self.white_attacking_tiles: # Tile is defended
+                if move in attacked_tiles: # Tile is defended
                     if move.piece == None:
                         if -piece.value > best_move[2]:
                             best_move[0] = move
@@ -789,10 +857,7 @@ class SjakkSpill:
                             best_move[1] = piece
                             best_move[2] = move.piece.value
 
-        self.previous_clicked_tile = best_move[1].tile
-        self.move_piece(best_move[0])
-        print(f"bot moved {best_move[1]}\n\n")
-        self.clicked_tile = False
+        return best_move
 
     def bot_losing_piece(self):
         for piece in self.black_pieces:
